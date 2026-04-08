@@ -127,6 +127,24 @@ def atualizar_produto(product_id, name, description, price, category_id, image, 
         return True
     except mysql.connector.Error:
         return False
+    
+def excluir_produto(product_id):
+    """Função para excluir um produto do banco de dados"""
+    conn = conectar_bd()
+    if not conn:
+        return False
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM products WHERE id = %s", (product_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except mysql.connector.Error:
+        return False
+    
+
 
 if __name__ == "__main__":
     # Teste rápido via terminal

@@ -1,7 +1,17 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for
 from api import listar_produtos, verificar_login 
 
-app = Flask(__name__, template_folder='../template')
+# Configurar caminhos
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+STATIC_DIR = os.path.join(BASE_DIR, 'templates', 'icon')
+
+# Inicializar Flask com as pastas
+app = Flask(__name__, 
+            template_folder=TEMPLATES_DIR,
+            static_folder=STATIC_DIR,
+            static_url_path='/icon')
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
@@ -13,7 +23,7 @@ def login():
         if verificar_login(email, password):
             return redirect(url_for('produtos'))
         else:
-            return render_template('../template/login.html', error="Email ou senha inválidos!")
+            return render_template('../templates/login.html', error="Email ou senha inválidos!")
             
     return render_template('login.html')
 
@@ -26,10 +36,8 @@ def produtos():
     if not lista_de_produtos:
         return "<h1>Nenhum produto encontrado.</h1><p><a href='/cadastrar'>Cadastrar o primeiro produto</a></p>"
     
-    # Gera uma lista simples em HTML para visualização rápida
     html_lista = "<ul>"
     for p in lista_de_produtos:
-        #.get() para evitar erros se alguma coluna estiver vazia
         nome = p.get('name', 'Sem nome')
         preco = p.get('price', 0.0)
         estoque = p.get('stock', 0)
