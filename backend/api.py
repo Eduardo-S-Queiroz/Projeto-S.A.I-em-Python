@@ -33,7 +33,7 @@ def verificar_login(email, password):
         conn.close()
         
         # Verifica se o usuário existe e se a senha coincide
-        if result and result[0] == password:
+        if result is not None and result[0] == password: # type: ignore
             return True
         return False
     except mysql.connector.Error:
