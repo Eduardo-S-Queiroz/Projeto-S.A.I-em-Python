@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Chá & Cia</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container-geral">
+        <aside class="menu-lateral">
+            <div class="logo-area">
+                <h2>Chá Admin</h2>
+            </div>
+            <nav>
+                <ul>
+                    <li class="item-menu ativo" data-tela="tela-estoque">📦 Gerenciamento</li>
+                    <li class="item-menu" data-tela="tela-pedidos">🛒 Pedidos</li>
+                    <li class="item-menu" data-tela="tela-acessibilidade">♿ Acessibilidade</li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="area-principal">
+
+            <div id="tela-estoque" class="tela-secao">
+                <header class="topo-painel">
+                    <div>
+                        <h1>Gerenciamento de Chás</h1>
+                        <p>Controle de estoque e visibilidade da loja.</p>
+                    </div>
+                    <button class="btn-adicionar">+ Novo Chá</button>
+                </header>
+
+                <section class="barra-ferramentas">
+                    <input type="text" placeholder="Pesquisar chá pelo nome ou código..." class="input-busca">
+                </section>
+
+                <section class="secao-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Status</th>
+                                <th>Qtd.</th>
+                                <th>Preço</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpo-tabela">
+                            <tr>
+                                <td>Chá de Camomila Relax</td>
+                                <td><span class="status ativo">Ativo</span></td>
+                                <td>50</td>
+                                <td>R$ 15,90</td>
+                                <td>
+                                    <button class="btn-editar">Editar</button>
+                                    <button class="btn-toggle-status">Desativar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+
+            <div id="tela-pedidos" class="tela-secao" style="display: none;">
+                <header class="topo-painel">
+                    <h1>Registro de Vendas</h1>
+                    <p>Histórico completo de pedidos realizados.</p>
+                </header>
+                <section class="secao-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Produto</th>
+                                <th>Endereço</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>João Silva</td>
+                                <td>Chá de Camomila (2x)</td>
+                                <td>Rua das Flores, 123</td>
+                                <td><span class="status ativo">Concluído</span></td>
+                                <td>R$ 31,80</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+
+            <div id="tela-acessibilidade" class="tela-secao" style="display: none;">
+                <header class="topo-painel">
+                    <h1>Acessibilidade e Preferências</h1>
+                </header>
+                <section class="secao-card card-padding">
+                    <div class="opcao-preferencia">
+                        <h3>Aparência</h3>
+                        <label>Cor Principal do Sistema:</label>
+                        <input type="color" id="seletor-cor" value="#8a2be2">
+                    </div>
+                    <hr>
+                    <div class="opcao-preferencia">
+                        <h3>Assistência</h3>
+                        <label>Libras:</label>
+                        <button class="btn-toggle-status" id="btn-libras">Ativar VLibras</button>
+                        <p class="info-texto">Ativa o assistente virtual para tradução em LIBRAS.</p>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="janela-modal">
+        <div class="modal-conteudo">
+            <h2 id="modal-titulo">Editar Chá</h2>
+            <form id="form-cha">
+                <div class="campo-modal">
+                    <label>Nome do Chá:</label>
+                    <input type="text" id="input-nome">
+                </div>
+                <div class="campo-modal">
+                    <label>Quantidade:</label>
+                    <input type="number" id="input-qtd">
+                </div>
+                <div class="campo-modal">
+                    <label>Preço (R$):</label>
+                    <input type="number" id="input-preco" step="0.01">
+                </div>
+                <div class="modal-botoes">
+                    <button type="button" class="btn-cancelar">Cancelar</button>
+                    <button type="button" class="btn-salvar" id="btn-confirmar">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
