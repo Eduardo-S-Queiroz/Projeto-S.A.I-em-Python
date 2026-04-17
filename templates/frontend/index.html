@@ -1,28 +1,67 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <link rel="icon" type="image/png" href="img/favicon.png?v=3"> 
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - Chá & Cia</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="container-geral">
+        
         <aside class="menu-lateral">
             <div class="logo-area">
-                <h2>Chá Admin</h2>
+                <i class="ph ph-leaf"></i> <h2>Chá Admin</h2>
             </div>
             <nav>
                 <ul>
-                    <li class="item-menu ativo" data-tela="tela-estoque">📦 Gerenciamento</li>
-                    <li class="item-menu" data-tela="tela-pedidos">🛒 Pedidos</li>
-                    <li class="item-menu" data-tela="tela-acessibilidade">♿ Acessibilidade</li>
+                    <li class="item-menu ativo" data-tela="tela-estoque">
+                        <i class="ph ph-package"></i> Gerenciamento
+                    </li>
+                    <li class="item-menu" data-tela="tela-pedidos">
+                        <i class="ph ph-shopping-cart"></i> Pedidos
+                    </li>
+                    <li class="item-menu" data-tela="tela-acessibilidade">
+                        <i class="ph ph-wheelchair"></i> Acessibilidade
+                    </li>
                 </ul>
             </nav>
         </aside>
 
         <main class="area-principal">
+
+            <div class="icones-usuario">
+                <div class="icone-wrapper" id="btn-ajuda" title="Ajuda">
+                    <i class="ph ph-question"></i>
+                </div>
+                
+                <div class="icone-wrapper" id="btn-notificacao">
+                    <i class="ph ph-bell"></i>
+                    <span class="bolinha-aviso"></span>
+                    <div class="caixa-dropdown" id="drop-notificacao">
+                        <h4>Notificações Recentes</h4>
+                        <p>🛒 Novo pedido: João Silva</p>
+                        <p>📦 Estoque baixo: Chá Verde Detox</p>
+                    </div>
+                </div>
+
+                <div class="icone-wrapper" id="btn-perfil">
+                    <i class="ph ph-coffee"></i>
+                    <div class="caixa-dropdown" id="drop-perfil">
+                        <button id="btn-voltar-loja"><i class="ph ph-sign-out"></i> Voltar para a Loja</button>
+                    </div>
+                </div>
+            </div>
 
             <div id="tela-estoque" class="tela-secao">
                 <header class="topo-painel">
@@ -33,11 +72,19 @@
                     <button class="btn-adicionar">+ Novo Chá</button>
                 </header>
 
-                <section class="barra-ferramentas">
-                    <input type="text" placeholder="Pesquisar chá pelo nome ou código..." class="input-busca">
-                </section>
-
                 <section class="secao-card">
+                    <div class="cabecalho-tabela-interna">
+                        <div>
+                            <h2 style="font-size: 1.2rem; color: var(--cor-texto-principal);">Lista de Produtos</h2>
+                            <p style="font-size: 0.85rem; color: var(--cor-texto-mutado);">Visão geral do inventário atual</p>
+                        </div>
+                        
+                        <div class="caixa-busca">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" placeholder="Pesquisar chá pelo nome ou código..." class="input-busca">
+                        </div>
+                    </div>
+
                     <table>
                         <thead>
                             <tr>
@@ -55,8 +102,26 @@
                                 <td>50</td>
                                 <td>R$ 15,90</td>
                                 <td>
-                                    <button class="btn-editar">Editar</button>
-                                    <button class="btn-toggle-status">Desativar</button>
+                                    <button class="btn-acao btn-editar" title="Editar chá">
+                                        <i class="ph ph-pencil-simple"></i>
+                                    </button>
+                                    <button class="btn-acao btn-toggle-status" title="Desativar chá">
+                                        <i class="ph ph-power"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Chá Verde Detox</td>
+                                <td><span class="status ativo">Ativo</span></td>
+                                <td>3</td>
+                                <td>R$ 10.00</td>
+                                <td>
+                                    <button class="btn-acao btn-editar" title="Editar chá">
+                                        <i class="ph ph-pencil-simple"></i>
+                                    </button>
+                                    <button class="btn-acao btn-toggle-status" title="Desativar chá">
+                                        <i class="ph ph-power"></i>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -66,27 +131,56 @@
 
             <div id="tela-pedidos" class="tela-secao" style="display: none;">
                 <header class="topo-painel">
-                    <h1>Registro de Vendas</h1>
-                    <p>Histórico completo de pedidos realizados.</p>
+                    <div>
+                        <h1>Registro de Vendas</h1>
+                        <p>Histórico de clientes e pedidos realizados.</p>
+                    </div>
                 </header>
+                
                 <section class="secao-card">
+                    <div class="cabecalho-tabela-interna">
+                        <div>
+                            <h2 style="font-size: 1.2rem; color: var(--cor-texto-principal);">Últimos Pedidos</h2>
+                            <p style="font-size: 0.85rem; color: var(--cor-texto-mutado);">Acompanhe as transações recentes</p>
+                        </div>
+                        <div class="caixa-busca">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" placeholder="Buscar pedido por cliente, email ou produto..." class="input-busca">
+                        </div>
+                    </div>
+
                     <table>
                         <thead>
                             <tr>
                                 <th>Cliente</th>
+                                <th>Email</th>    
                                 <th>Produto</th>
-                                <th>Endereço</th>
                                 <th>Status</th>
-                                <th>Total</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>João Silva</td>
+                                <td>joao.silva@email.com</td>
                                 <td>Chá de Camomila (2x)</td>
-                                <td>Rua das Flores, 123</td>
                                 <td><span class="status ativo">Concluído</span></td>
-                                <td>R$ 31,80</td>
+                                <td>
+                                    <button class="btn-acao btn-editar" title="Ver detalhes">
+                                        <i class="ph ph-pencil-simple"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Maria Oliveira</td>
+                                <td>maria.oli@email.com</td>
+                                <td>Chá Verde Detox (1x)</td>
+                                <td><span class="status inativo">Pendente</span></td>
+                                <td>
+                                    <button class="btn-acao btn-editar" title="Ver detalhes">
+                                        <i class="ph ph-pencil-simple"></i>
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -95,19 +189,23 @@
 
             <div id="tela-acessibilidade" class="tela-secao" style="display: none;">
                 <header class="topo-painel">
-                    <h1>Acessibilidade e Preferências</h1>
+                    <div>
+                        <h1>Acessibilidade e Preferências</h1>
+                        <p>Personalize o sistema para a sua necessidade.</p>
+                    </div>
                 </header>
+
                 <section class="secao-card card-padding">
                     <div class="opcao-preferencia">
                         <h3>Aparência</h3>
                         <label>Cor Principal do Sistema:</label>
-                        <input type="color" id="seletor-cor" value="#8a2be2">
+                        <input type="color" id="seletor-cor" value="#6b8e6b">
                     </div>
                     <hr>
                     <div class="opcao-preferencia">
                         <h3>Assistência</h3>
                         <label>Libras:</label>
-                        <button class="btn-toggle-status" id="btn-libras">Ativar VLibras</button>
+                        <button class="btn-adicionar" id="btn-libras">Ativar VLibras</button>
                         <p class="info-texto">Ativa o assistente virtual para tradução em LIBRAS.</p>
                     </div>
                 </section>

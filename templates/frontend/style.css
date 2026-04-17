@@ -1,197 +1,417 @@
+/* =========================================
+   1. VARIÁVEIS DE CORES (VIBE BOTÂNICA)
+   ========================================= */
 :root {
-  --cor-principal: #a855f7; /* Roxo vibrante do exemplo */
-    --cor-principal-hover: #c084fc;
-  --cor-alerta: #eab308; /* Amarelo dourado do botão "Editar" */
-    --cor-alerta-hover: #facc15;
-    --fundo-pagina: #111111; /* Preto ligeiramente mais suave */
-  --fundo-card: #1f1f1f; /* Cor dos cartões flutuantes */
-    --cor-borda: #333333;
-  --cor-texto-mutado: #a1a1aa; /* Cinza para os textos secundários */
+  --cor-principal: #6b8e6b;       /* Verde Sálvia (Botões e Destaques) */
+  --cor-principal-hover: #587558; /* Verde mais escuro para hover */
+  --cor-alerta: #eab308;          /* Ouro/Mostarda (Editar) */
+  --cor-alerta-hover: #ca8a04;
+  --fundo-pagina: #f4f1ea;        /* Creme claro quente (Fundo do site) */
+  --fundo-card: #ffffff;          /* Branco para os cartões flutuantes */
+  --fundo-sidebar: #2c332c;       /* Verde Oliva muito escuro (Menu Lateral) */
+  --cor-borda: #e0dcd3;           /* Cinza/Creme escuro para bordas */
+  --cor-texto-principal: #2d312d; /* Verde/Cinza quase preto para textos */
+  --cor-texto-mutado: #7a7d7a;    /* Cinza esverdeado para legendas */
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; } /* Sugestão: adicione 'Inter' se puder, é a fonte desse estilo */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', 'Segoe UI', sans-serif; 
+}
 
-body { background-color: var(--fundo-pagina); color: #e0e0e0; transition: background 0.3s; }
+/* Fundo claro e texto escuro */
+body {
+  background-color: var(--fundo-pagina);
+  color: var(--cor-texto-principal);
+  transition: background 0.3s;
+}
 
-.container-geral { display: flex; height: 100vh; }
+.container-geral {
+  display: flex;
+  height: 100vh;
+}
 
-/* Menu Lateral Premium */
+/* =========================================
+   2. MENU LATERAL (ESCURO/ELEGANTE)
+   ========================================= */
 .menu-lateral {
-    width: 260px; background-color: #121212;
-    border-right: 1px solid #222; padding: 30px 15px;
+  width: 260px;
+  background-color: var(--fundo-sidebar);
+  padding: 30px 15px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.05);
 }
-.logo-area h2 { color: #8a2be2; margin-bottom: 40px; text-align: center; letter-spacing: 1px; }
 
-.menu-lateral ul { list-style: none; }
+.logo-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px; /* Espaço entre a folha e o texto */
+  margin-bottom: 40px;
+  color: #a3b18a; /* Verde claro destacando o logo */
+}
+
+.logo-area i {
+  font-size: 2rem; /* Tamanho do ícone de folha */
+}
+
+.logo-area h2 {
+  margin-bottom: 0;
+  text-align: center;
+  letter-spacing: 1px;
+  font-size: 1.4rem;
+}
+
+.menu-lateral ul {
+  list-style: none;
+}
+
 .item-menu {
-    padding: 14px 20px; margin-bottom: 10px; color: #888;
-    border-radius: 12px; cursor: pointer; transition: 0.3s;
-    font-weight: 500; display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  margin-bottom: 10px;
+  color: #9ca3af; /* Cinza claro */
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.item-menu:hover { background: #1a1a1a; color: #bc8cf2; }
-.item-menu.ativo { background: #8a2be2; color: white; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3); }
 
-/* Área Principal */
-.area-principal { flex: 1; padding: 40px; overflow-y: auto; }
-.topo-painel { margin-bottom: 30px; border-bottom: 1px solid #222; padding-bottom: 20px; }
-.topo-painel h1 { font-size: 1.8rem; margin-bottom: 5px; }
+.item-menu i {
+  font-size: 1.3rem; /* Tamanho dos ícones do menu */
+  min-width: 24px;   /* Garante alinhamento perfeito dos textos */
+}
 
+.item-menu:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.item-menu.ativo {
+  background: #a3b18a; /* Fundo verde claro */
+  color: #1a1f1a; /* Texto escuro no menu ativo */
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(163, 177, 138, 0.2);
+}
+
+/* =========================================
+   3. ÁREA PRINCIPAL E CABEÇALHO
+   ========================================= */
+.area-principal {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.topo-painel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.topo-painel h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--cor-texto-principal);
+  margin-bottom: 5px;
+}
+
+.topo-painel p {
+  color: var(--cor-texto-mutado);
+}
+
+/* =========================================
+   4. ÍCONES DO TOPO E BARRA DE BUSCA INTERNA
+   ========================================= */
+/* Ícones Superiores */
+.icones-usuario {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  margin-bottom: 10px;
+  font-size: 1.6rem;
+  color: var(--cor-texto-mutado);
+}
+
+.icones-usuario i {
+  cursor: pointer;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.icones-usuario i:hover {
+  color: var(--cor-principal);
+  transform: translateY(-2px);
+}
+
+/* Cabeçalho que agrupa título da tabela e busca */
+.cabecalho-tabela-interna {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.caixa-busca {
+  position: relative;
+  width: 350px; 
+}
+
+.caixa-busca i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8fa08f; /* Verde suave para o ícone da lupa */
+  font-size: 1.2rem;
+}
+
+.input-busca {
+  width: 100%;
+  padding: 12px 15px 12px 45px; 
+  background: transparent;
+  border: 2px solid #a3b18a; /* Borda verde clara */
+  border-radius: 8px;
+  color: var(--cor-texto-principal);
+  font-size: 0.95rem;
+  transition: all 0.3s;
+}
+
+.input-busca::placeholder { color: #8fa08f; }
+
+.input-busca:focus {
+  border-color: var(--cor-principal);
+  outline: none;
+  background: #ffffff; /* Fica branco puro quando clica */
+  box-shadow: 0 4px 15px rgba(107, 142, 107, 0.15);
+}
+
+/* =========================================
+   5. TABELA (ESTILO CARTÃO CORPORATIVO)
+   ========================================= */
+.secao-card {
+  background: var(--fundo-card);
+  border-radius: 16px;
+  padding: 30px; 
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); 
+}
+
+table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
+thead {
+  background-color: #92a78d; 
+}
+
+th {
+  color: white !important; 
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 16px 25px;
+  text-align: center; /* Mudou de left para center */
+}
+
+th:first-child { 
+  border-radius: 12px 0 0 0; 
+  text-align: left; 
+}
+th:last-child { 
+  border-radius: 0 12px 0 0; 
+}
+
+tbody tr {
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+tbody td {
+  padding: 18px 25px;
+  font-size: 0.95rem;
+  text-align: center; /* Mudou de left para center */
+  border-bottom: 1px solid #f0f0f0; 
+}
+
+tbody tr:hover {
+  background: rgba(163, 177, 138, 0.08); 
+}
+
+/* Efeito Zebrado nas Tabelas (Linha sim, linha não) */
+tbody tr:nth-child(even) {
+  background-color: rgba(163, 177, 138, 0.04); /* Um verdinho beeeem suave */
+}
+
+tbody td:first-child { 
+  border-radius: 0; 
+  font-weight: 500; 
+  text-align: left; 
+}
+tbody td:last-child { 
+  border-radius: 0; 
+}
+
+/* =========================================
+   6. BOTÕES PRINCIPAIS E TAGS DE STATUS
+   ========================================= */
 .btn-adicionar {
-    background: #8a2be2; color: white; border: none; padding: 12px 24px;
-    border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;
+  background: var(--cor-principal);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
 }
-.btn-adicionar:hover { background: #a04ef6; transform: translateY(-2px); }
 
-/* Estilo Card e Tabela */
-.secao-card { background: #161616; border-radius: 15px; border: 1px solid #222; overflow: hidden; }
-.card-padding { padding: 30px; }
+.btn-adicionar:hover {
+  background: var(--cor-principal-hover);
+  transform: translateY(-2px);
+}
 
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 18px 25px; text-align: left; }
-th { color: #8a2be2; text-transform: uppercase; font-size: 0.75rem; background: #1a1a1a; }
-tr { border-bottom: 1px solid #222; transition: 0.2s; }
-tr:hover { background: #1d1d1d; }
+/* Status Labels */
+.status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border: none;
+  display: inline-block; 
+}
 
-/* Status */
-.status { padding: 6px 14px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; }
-.status.ativo { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid #2ecc71; }
-.status.inativo { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid #e74c3c; }
+.status.ativo { background: #e6f4ea; color: #1e8e3e; }
+.status.inativo { background: #fce8e6; color: #d93025; }
 
-/* Modal Premium */
+/* =========================================
+   7. JANELA MODAL E ACESSIBILIDADE
+   ========================================= */
 .janela-modal {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 9999;
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(44, 51, 44, 0.7); 
+  backdrop-filter: blur(5px); 
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
+
 .modal-conteudo {
-    background: #1a1a1a; padding: 40px; border-radius: 20px;
-    width: 480px; border: 1px solid #8a2be2; box-shadow: 0 0 40px rgba(138, 43, 226, 0.2);
+  background: var(--fundo-card);
+  padding: 40px;
+  border-radius: 20px;
+  width: 480px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 }
-.modal-conteudo h2 { text-align: center; margin-bottom: 30px; color: #8a2be2; }
+
+.modal-conteudo h2 { text-align: center; margin-bottom: 30px; color: var(--cor-principal); }
 
 .campo-modal { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-.campo-modal label { color: #bc8cf2; font-weight: 600; font-size: 0.9rem; }
+.campo-modal label { color: var(--cor-texto-principal); font-weight: 600; font-size: 0.9rem; }
 .campo-modal input {
-    padding: 12px; background: #0b0b0b; border: 1px solid #333;
-    color: white; border-radius: 8px; outline: none; transition: 0.3s;
+  padding: 12px; background: #f9f9f9; border: 1px solid var(--cor-borda);
+  color: var(--cor-texto-principal); border-radius: 8px; outline: none; transition: 0.3s;
 }
-.campo-modal input:focus { border-color: #8a2be2; box-shadow: 0 0 10px rgba(138, 43, 226, 0.3); }
+.campo-modal input:focus { border-color: var(--cor-principal); }
 
 .modal-botoes { display: flex; gap: 15px; margin-top: 10px; }
-.btn-salvar { background: #8a2be2; border: none; color: white; padding: 12px; border-radius: 8px; flex: 2; font-weight: bold; cursor: pointer; }
-.btn-cancelar { background: #333; border: none; color: white; padding: 12px; border-radius: 8px; flex: 1; cursor: pointer; }
+.btn-salvar { background: var(--cor-principal); border: none; color: white; padding: 12px; border-radius: 8px; flex: 2; font-weight: bold; cursor: pointer; }
+.btn-cancelar { background: #e5e7eb; border: none; color: #4b5563; padding: 12px; border-radius: 8px; flex: 1; font-weight: bold; cursor: pointer; }
 
 /* Acessibilidade */
+.card-padding { padding: 40px; }
 .opcao-preferencia { margin-bottom: 25px; }
-.opcao-preferencia h3 { margin-bottom: 15px; color: #8a2be2; }
-.info-texto { font-size: 0.8rem; color: #666; margin-top: 5px; }
-hr { border: 0; border-top: 1px solid #222; margin: 20px 0; }
+.opcao-preferencia h3 { margin-bottom: 15px; color: var(--cor-principal); }
+.info-texto { font-size: 0.8rem; color: var(--cor-texto-mutado); margin-top: 5px; }
+hr { border: 0; border-top: 1px solid var(--cor-borda); margin: 20px 0; }
 
-.topo-painel { margin-bottom: 30px; border: none; padding-bottom: 0; } /* Remove bordas e padding antigos */
-.topo-painel h1 { font-size: 2.2rem; font-weight: 700; color: white; margin-bottom: 5px; } /* Título maior e mais pesado */
-.topo-painel p { color: var(--cor-texto-mutado); }
-
-.btn-adicionar {
-    background: var(--cor-principal);
-    border-radius: 12px; /* Cantos mais arredondados */
-    padding: 14px 28px;
-    font-size: 1rem;
-    position: absolute; /* Para alinhar ao topo direito como na imagem */
-    right: 40px;
-    top: 40px;
-}
-.area-principal { position: relative; } /* Necessário para o botão absoluto funcionar */
-
-.barra-ferramentas { margin-bottom: 25px; }
-.input-busca {
-    width: 100%;
-    padding: 16px;
-    background: #18181b; /* Fundo escuro */
-    border: 1px solid var(--cor-borda);
-    border-radius: 12px;
-    color: white;
-    font-size: 1rem;
-}
-.input-busca:focus {
-    border-color: var(--cor-principal);
-    outline: none;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+/* =========================================
+   8. AÇÕES NA TABELA (Botões Minimalistas)
+   ========================================= */
+td:last-child { 
+  display: flex;
+  justify-content: center; /* Mudou de flex-start para center */
+  align-items: center;
+  gap: 8px; 
 }
 
-/* Container da tabela */
-.secao-card { 
-    background: none; /* Removemos o fundo do container */
-    border: none; /* Removemos a borda do container */
-    overflow: visible; /* Necessário para que os cartões não cortem a sombra */
+.btn-acao {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cor-texto-mutado); 
 }
 
-table { border-spacing: 0 10px; border-collapse: separate; } /* MUITO IMPORTANTE: Dá espaçamento vertical entre as linhas */
+.btn-acao i { font-size: 1.4rem; }
 
-/* Cabeçalho da tabela */
-th {
-    color: var(--cor-texto-mutado);
-    text-transform: none; /* Remove uppercase */
-    font-weight: 600;
-    font-size: 0.85rem;
-    padding: 15px 25px;
-    background: none;
-}
-th:first-child { color: var(--cor-principal); } /* Mantém a primeira coluna destacada */
-
-/* Linhas da tabela (OS CARTÕES) */
-tbody tr {
-    background: var(--fundo-card); /* Cor de cartão */
-    border-radius: 16px; /* Cantos bem arredondados para cada linha! */
-    transition: all 0.2s ease;
-}
-tbody tr:hover {
-    background: #252529; /* Leve destaque no hover */
-    transform: translateY(-2px); /* Efeito flutuante */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+.btn-editar:hover {
+  background: #fef08a; 
+  color: var(--cor-alerta-hover); 
 }
 
-/* Cantos arredondados precisam ser aplicados nas CÉLULAS das pontas */
-tbody td:first-child { border-radius: 16px 0 0 16px; }
-tbody td:last-child { border-radius: 0 16px 16px 0; }
-
-td {
-    padding: 22px 25px; /* Aumentamos o padding para dar mais ar */
-    font-size: 0.95rem;
+.btn-toggle-status:hover {
+  background: #fee2e2; 
+  color: #ef4444; 
 }
 
-/* Célula das ações */
-td:last-child { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+/* =========================================
+   9. MENUS SUSPENSOS (TOPO) E MELHORIAS VISUAIS
+   ========================================= */
+.icone-wrapper { position: relative; padding: 5px; }
 
-/* Botões de Ação (Comuns) */
-.btn-editar, .btn-toggle-status {
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.2s;
+.bolinha-aviso { 
+  position: absolute; top: 0; right: 2px; width: 8px; height: 8px; 
+  background: #eab308; border-radius: 50%; 
 }
 
-/* Botão Editar (Amarelo) */
-.btn-editar {
-    background: var(--cor-alerta);
-    color: #111; /* Texto escuro */
+.caixa-dropdown { 
+  display: none; position: absolute; top: 40px; right: 0; 
+  background: white; border: 1px solid var(--cor-borda); border-radius: 12px; 
+  padding: 15px; width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+  z-index: 100; text-align: left;
 }
-.btn-editar:hover { background: var(--cor-alerta-hover); }
 
-/* Botão Desativar/Ativar (Cinza) */
-.btn-toggle-status {
-    background: #3f3f46; /* Cinza escuro */
-    color: #d1d5db; /* Texto claro */
+.caixa-dropdown h4 { margin-bottom: 10px; color: var(--cor-principal); font-size: 0.9rem; }
+.caixa-dropdown p { font-size: 0.85rem; padding: 8px 0; border-bottom: 1px solid #eee; color: var(--cor-texto-principal); }
+.caixa-dropdown p:last-child { border-bottom: none; }
+
+#btn-voltar-loja { 
+  width: 100%; padding: 10px; background: #fce8e6; color: #d93025; 
+  border: none; border-radius: 8px; font-weight: bold; cursor: pointer; 
+  display: flex; align-items: center; justify-content: center; gap: 8px; 
 }
-.btn-toggle-status:hover { background: #52525b; }
+#btn-voltar-loja:hover { background: #fad2ce; }
 
-/* Status */
-.status {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    background: rgba(46, 204, 113, 0.1);
-    color: #2ecc71;
-    border: none; /* Remove borda antiga */
+/* Visual da linha quando o item for Desativado */
+.linha-inativa { background-color: #f6f6f6 !important; }
+.linha-inativa td { color: #a1a1aa; }
+.linha-inativa .status { opacity: 0.6; }
+
+.linha-inativa .btn-toggle-status:hover {
+  background: #dcfce7;
+  color: #22c55e;
+}
+
+@media (max-width: 768px) {
+  .container-geral { flex-direction: column; }
+  .menu-lateral { width: 100%; box-shadow: none; padding: 15px; }
+  .menu-lateral ul { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; }
+  .item-menu { margin-bottom: 0; white-space: nowrap; }
+  .topo-painel { flex-direction: column; align-items: flex-start; gap: 15px; }
+  .cabecalho-tabela-interna { flex-direction: column; align-items: flex-start; gap: 15px; }
+  .caixa-busca { width: 100%; }
+  .secao-card { overflow-x: auto; padding: 20px; }
 }

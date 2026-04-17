@@ -1,127 +1,50 @@
+/* =========================================
+   1. VARIÁVEIS GERAIS (SELEÇÃO DO DOM)
+   ========================================= */
 const modal = document.querySelector('.janela-modal');
 const modalTitulo = document.getElementById('modal-titulo');
 const btnNovoCha = document.querySelector('.btn-adicionar');
 const botaoCancelar = document.querySelector('.btn-cancelar');
 const btnConfirmar = document.getElementById('btn-confirmar');
 const corpoTabela = document.getElementById('corpo-tabela');
+const inputBusca = document.querySelector('.input-busca');
 
-// Variável para controle de edição
+// Variável para controle de edição (guarda a linha que está sendo editada)
 let linhaSendoEditada = null;
 
-// --- LÓGICA DE NAVEGAÇÃO ENTRE TELAS ---
+
+/* =========================================
+   2. NAVEGAÇÃO ENTRE TELAS (MENU LATERAL)
+   ========================================= */
 const itensMenu = document.querySelectorAll('.item-menu');
 const todasTelas = document.querySelectorAll('.tela-secao');
 
 itensMenu.forEach(item => {
     item.addEventListener('click', () => {
-        // Remove 'ativo' de todos e adiciona no clicado
+        // Remove a classe 'ativo' de todos os itens e adiciona no clicado
         itensMenu.forEach(i => i.classList.remove('ativo'));
         item.classList.add('ativo');
 
-        // Esconde todas as telas e mostra a selecionada
+        // Esconde todas as telas
         todasTelas.forEach(t => t.style.display = 'none');
+        
+        // Pega o ID da tela correspondente e mostra ela
         const telaAlvo = item.getAttribute('data-tela');
         document.getElementById(telaAlvo).style.display = 'block';
     });
 });
 
-// --- CONTROLE DO MODAL ---
-btnNovoCha.addEventListener('click', () => {
-    linhaSendoEditada = null;
-    modalTitulo.innerText = "Cadastrar Novo Chá";
-    document.getElementById('form-cha').reset(); // Limpa todos os campos
-    modal.style.display = 'flex';
-});
 
-botaoCancelar.addEventListener('click', () => modal.style.display = 'none');
-
-btnConfirmar.addEventListener('click', (e) => {
-    e.preventDefault();
-    const nome = document.getElementById('input-nome').value;
-    const qtd = document.getElementById('input-qtd').value;
-    const preco = document.getElementById('input-preco').value;
-
-    if (!nome || !qtd || !preco) return alert("Preencha todos os campos!");
-
-    if (linhaSendoEditada) {
-        // Modo Edição
-        linhaSendoEditada.cells[0].innerText = nome;
-        linhaSendoEditada.cells[2].innerText = qtd;
-        linhaSendoEditada.cells[3].innerText = `R$ ${parseFloat(preco).toFixed(2)}`;
-    } else {
-        // Modo Novo
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${nome}</td>
-            <td><span class="status ativo">Ativo</span></td>
-            <td>${qtd}</td>
-            <td>R$ ${parseFloat(preco).toFixed(2)}</td>
-            <td>
-                <button class="btn-editar">Editar</button>
-                <button class="btn-toggle-status">Desativar</button>
-            </td>
-        `;
-        corpoTabela.appendChild(tr);
-    }
-    modal.style.display = 'none';
-});
-
-// --- AÇÕES NA TABELA (EDITAR / STATUS) ---
-corpoTabela.addEventListener('click', (e) => {
-    const btn = e.target;
-    const linha = btn.closest('tr');
-
-    if (btn.classList.contains('btn-toggle-status')) {
-        const badge = linha.querySelector('.status');
-        if (btn.innerText === "Desativar") {
-            badge.innerText = "Inativo";
-            badge.classList.replace('ativo', 'inativo');
-            linha.style.opacity = "0.4";
-            btn.innerText = "Ativar";
-        } else {
-            badge.innerText = "Ativo";
-            badge.classList.replace('inativo', 'ativo');
-            linha.style.opacity = "1";
-            btn.innerText = "Desativar";
-        }
-    }
-
-    if (btn.classList.contains('btn-editar')) {
-        linhaSendoEditada = linha;
-        modalTitulo.innerText = "Editar Chá";
-        document.getElementById('input-nome').value = linha.cells[0].innerText;
-        document.getElementById('input-qtd').value = linha.cells[2].innerText;
-        document.getElementById('input-preco').value = linha.cells[3].innerText.replace('R$ ', '').replace(',', '.');
-        modal.style.display = 'flex';
-    }
-});
-
-// --- ACESSIBILIDADE: TROCA DE COR ---
-document.getElementById('seletor-cor').addEventListener('input', (e) => {
-    const cor = e.target.value;
-    document.documentElement.style.setProperty('--cor-principal', cor); // Se quiser usar variáveis CSS
-    // Forma simples: mudar o que é roxo
-    document.querySelectorAll('.item-menu.ativo, .btn-adicionar, .btn-salvar').forEach(el => {
-        el.style.backgroundColor = cor;
-    });
-    document.querySelectorAll('h2, h1, th, .item-menu:hover').forEach(el => {
-        el.style.color = cor;
-    });
-});
-
-document.getElementById('seletor-cor').addEventListener('input', (e) => {
-    const cor = e.target.value;
-    document.documentElement.style.setProperty('--cor-principal', cor);
-});
-
-const inputBusca = document.querySelector('.input-busca');
-
+/* =========================================
+   3. SISTEMA DE BUSCA (FILTRO NA TABELA)
+   ========================================= */
 inputBusca.addEventListener('keyup', () => {
     const termo = inputBusca.value.toLowerCase();
     const linhas = corpoTabela.querySelectorAll('tr');
 
     linhas.forEach(linha => {
         const nomeCha = linha.cells[0].innerText.toLowerCase();
+        // Se o nome do chá contém o que foi digitado, mostra a linha. Senão, esconde.
         if (nomeCha.includes(termo)) {
             linha.style.display = "";
         } else {
@@ -130,10 +53,122 @@ inputBusca.addEventListener('keyup', () => {
     });
 });
 
+
+/* =========================================
+   4. CONTROLE DO MODAL (NOVO CHÁ / EDITAR)
+   ========================================= */
+// Abrir modal para NOVO chá
+btnNovoCha.addEventListener('click', () => {
+    linhaSendoEditada = null; // Garante que estamos criando um novo, não editando
+    modalTitulo.innerText = "Cadastrar Novo Chá";
+    document.getElementById('form-cha').reset(); // Limpa os campos do formulário
+    modal.style.display = 'flex';
+});
+
+// Fechar modal no botão Cancelar
+botaoCancelar.addEventListener('click', () => {
+    modal.style.display = 'none';
+});
+
+// Confirmar (Salvar Novo ou Salvar Edição)
+btnConfirmar.addEventListener('click', (e) => {
+    e.preventDefault(); // Evita que a página recarregue
+    
+    const nome = document.getElementById('input-nome').value;
+    const qtd = document.getElementById('input-qtd').value;
+    const preco = document.getElementById('input-preco').value;
+
+    if (!nome || !qtd || !preco) return alert("Preencha todos os campos!");
+
+    if (linhaSendoEditada) {
+        // MODO EDIÇÃO: Atualiza os dados na linha existente
+        linhaSendoEditada.cells[0].innerText = nome;
+        linhaSendoEditada.cells[2].innerText = qtd;
+        linhaSendoEditada.cells[3].innerText = `R$ ${parseFloat(preco).toFixed(2)}`;
+    } else {
+        // MODO NOVO: Cria uma nova linha na tabela
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${nome}</td>
+            <td><span class="status ativo">Ativo</span></td>
+            <td>${qtd}</td>
+            <td>R$ ${parseFloat(preco).toFixed(2)}</td>
+            <td>
+                <button class="btn-acao btn-editar" title="Editar chá">
+                    <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button class="btn-acao btn-toggle-status" title="Desativar chá">
+                    <i class="ph ph-power"></i>
+                </button>
+            </td>
+        `;
+        corpoTabela.appendChild(tr);
+    }
+    
+    // Fecha o modal após salvar
+    modal.style.display = 'none';
+});
+
+
+/* =========================================
+   5. AÇÕES NA TABELA (DELEGAÇÃO DE EVENTOS)
+   ========================================= */
+corpoTabela.addEventListener('click', (e) => {
+    const btn = e.target.closest('button'); // Ajustado para pegar o botão mesmo clicando no ícone
+    if (!btn) return;
+    
+    const linha = btn.closest('tr');
+
+    // Lógica para DESATIVAR / ATIVAR produto
+    if (btn.classList.contains('btn-toggle-status')) {
+        const badge = linha.querySelector('.status');
+        
+        // Verifica pelo status atual da tag (Ativo ou Inativo)
+        if (badge.innerText === "Ativo") {
+            badge.innerText = "Inativo";
+            badge.classList.replace('ativo', 'inativo');
+            linha.classList.add('linha-inativa'); 
+            btn.title = "Ativar chá"; // Muda a dica do mouse
+        } else {
+            badge.innerText = "Ativo";
+            badge.classList.replace('inativo', 'ativo');
+            linha.classList.remove('linha-inativa'); 
+            btn.title = "Desativar chá"; // Muda a dica do mouse
+        }
+    }
+
+    // Lógica para EDITAR produto
+    if (btn.classList.contains('btn-editar')) {
+        linhaSendoEditada = linha;
+        modalTitulo.innerText = "Editar Chá";
+        
+        // Puxa os dados da tabela para os inputs do modal
+        document.getElementById('input-nome').value = linha.cells[0].innerText;
+        document.getElementById('input-qtd').value = linha.cells[2].innerText;
+        // Limpa o "R$" para deixar só o número no input de preço
+        document.getElementById('input-preco').value = linha.cells[3].innerText.replace('R$ ', '').replace(',', '.');
+        
+        modal.style.display = 'flex';
+    }
+});
+
+
+/* =========================================
+   6. ACESSIBILIDADE E PREFERÊNCIAS
+   ========================================= */
+// Troca de Cor do Sistema
+document.getElementById('seletor-cor').addEventListener('input', (e) => {
+    const cor = e.target.value;
+    // Como organizamos o CSS com variáveis, basta mudar a variável root!
+    document.documentElement.style.setProperty('--cor-principal', cor);
+});
+
+// Ativar VLibras
 const btnLibras = document.getElementById('btn-libras');
 btnLibras.addEventListener('click', () => {
+    // Verifica se o widget já não foi carregado para não duplicar
     if (!document.querySelector('[vw]')) {
-        // Cria a estrutura do VLibras dinamicamente
+        // Cria a estrutura do VLibras dinamicamente no HTML
         const div = document.createElement('div');
         div.setAttribute('vw', '');
         div.classList.add('enabled');
@@ -143,12 +178,56 @@ btnLibras.addEventListener('click', () => {
         `;
         document.body.appendChild(div);
 
+        // Adiciona o Script do VLibras
         const script = document.createElement('script');
         script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
         script.onload = () => new window.VLibras.Widget('https://vlibras.gov.br/app');
         document.head.appendChild(script);
         
+        // Atualiza o visual do botão
         btnLibras.innerText = "VLibras Ativado";
         btnLibras.style.background = "#2ecc71";
     }
+});
+
+/* =========================================
+   7. INTERAÇÕES DOS ÍCONES SUPERIORES
+   ========================================= */
+const btnNotificacao = document.getElementById('btn-notificacao');
+const dropNotificacao = document.getElementById('drop-notificacao');
+const btnPerfil = document.getElementById('btn-perfil');
+const dropPerfil = document.getElementById('drop-perfil');
+
+// Abrir aba de Notificações
+btnNotificacao.addEventListener('click', (e) => {
+    e.stopPropagation(); // Evita que feche imediatamente ao clicar
+    dropNotificacao.style.display = dropNotificacao.style.display === 'block' ? 'none' : 'block';
+    dropPerfil.style.display = 'none'; // Fecha o outro se estiver aberto
+});
+
+// Abrir aba de Log-off
+btnPerfil.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropPerfil.style.display = dropPerfil.style.display === 'block' ? 'none' : 'block';
+    dropNotificacao.style.display = 'none'; // Fecha o outro
+});
+
+// Fechar menus se clicar fora deles
+document.addEventListener('click', (e) => {
+    if (!btnNotificacao.contains(e.target) && !dropNotificacao.contains(e.target)) {
+        dropNotificacao.style.display = 'none';
+    }
+    if (!btnPerfil.contains(e.target) && !dropPerfil.contains(e.target)) {
+        dropPerfil.style.display = 'none';
+    }
+});
+
+// Piada do Ajuda (Question Mark)
+document.getElementById('btn-ajuda').addEventListener('click', () => {
+    alert("Área de Administrador!\n\nAqui editamos produtos, estoques e identificamos pedidos.\n\n⚠️ Se você não tem autorização para estar aqui, é melhor você 'dei-chá' essa página antes que queime a língua! ☕🔥");
+});
+
+// Botão Voltar para Loja (Logout)
+document.getElementById('btn-voltar-loja').addEventListener('click', () => {
+    alert("Fazendo log-off... Você será redirecionado para a vitrine principal da loja.");
 });
