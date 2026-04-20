@@ -39,9 +39,11 @@ def produtos():
     
     html_lista = "<ul>"
     for p in lista_de_produtos:
+        id_produto = p.get('id', 0)
         nome = p.get('name', 'Sem nome')
         preco = p.get('price', 0.0)
         estoque = p.get('stock', 0)
+<<<<<<< Updated upstream
         preco_formatado = f"R$ {preco:2.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         html_lista += f"<div>{nome} - {preco_formatado} em estoque - {estoque} unidades</div>"
     html_lista += "</ul>"
@@ -70,6 +72,9 @@ def produtos():
         preco_total = pedido.get('total_price')
         preco_total_formatado = f"R$ {preco_total:2.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         html_lista += f"<li>Pedido #{id_pedido} - Cliente: {nome_cliente} - Status: {status} - Produtos: {produtos_texto} - Total: {preco_total_formatado}</li>"
+=======
+        html_lista += f"<li><strong>{id_produto}</strong> - {nome} - R$ {preco:2.2f} em estoque - {estoque} unidades</li> "
+>>>>>>> Stashed changes
     html_lista += "</ul>"
 
 
