@@ -1,5 +1,6 @@
 import os
 import mysql.connector
+import uuid
 from dotenv import load_dotenv
 
 # Carrega variáveis de ambiente do arquivo .env
@@ -39,19 +40,23 @@ def verificar_login(email, password):
     except mysql.connector.Error:
         return False
     
-def cadastrar_produto(name, description, price, category_id, image, stock, slug, featured):
+def cadastrar_produto(code, name, description, price, category_id, image, stock, slug, featured):
     """Função para cadastrar um produto no banco de dados"""
+    
+    #cadatrar o produto no banco de dados com um codigo único gerado automaticamente
+    code = str(uuid.uuid4())
+    
     conn = conectar_bd()
     if not conn:
         return False
     
-    try:
+    try:        
         cursor = conn.cursor()
         query = """
-            INSERT INTO products (name, description, price, category_id, image, stock, slug, featured)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO products (code, name, description, price, category_id, image, stock, slug, featured)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (name, description, price, category_id, image, stock, slug, featured))
+        cursor.execute(query, (code, name, description, price, category_id, image, stock, slug, featured))
         conn.commit()
         cursor.close()
         conn.close()
@@ -91,15 +96,15 @@ def listar_categorias():
     except mysql.connector.Error:
         return []
 
-def consultar_produto(name):
-    """Função para consultar um produto específico pelo nome"""
+def consultar_produto(code):
+    """Função para consultar um produto específico pelo codigo"""
     conn = conectar_bd()
     if not conn:
         return None
     
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM products WHERE name = %s", (name,))
+        cursor.execute("SELECT * FROM products WHERE code = %s", (code,))
         produto = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -107,20 +112,20 @@ def consultar_produto(name):
     except mysql.connector.Error:
         return None
 
-def atualizar_produto(product_id, name, description, price, category_id, image, stock, slug, featured): 
+def atualizar_produto(code, product_id, name, description, price, category_id, image, stock, slug, featured): 
     """Função para atualizar um produto existente no banco de dados"""
     conn = conectar_bd()
     if not conn:
         return False
     
     try:
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         query = """
             UPDATE products
-            SET name = %s, description = %s, price = %s, category_id = %s, image = %s, stock = %s, slug = %s, featured = %s
+            SET code = %s, name = %s, description = %s, price = %s, category_id = %s, image = %s, stock = %s, slug = %s, featured = %s
             WHERE id = %s
         """
-        cursor.execute(query, (name, description, price, category_id, image, stock, slug, featured, product_id))
+        cursor.execute(query, (code, name, description, price, category_id, image, stock, slug, featured, product_id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -128,21 +133,53 @@ def atualizar_produto(product_id, name, description, price, category_id, image, 
     except mysql.connector.Error:
         return False
     
-def excluir_produto(product_id):
-    """Função para excluir um produto do banco de dados"""
+def status_produto(product_id):
+    """Função para atualizar o status de um produto no banco de dados"""
     conn = conectar_bd()
     if not conn:
         return False
     
     try:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM products WHERE id = %s", (product_id,))
+        cursor.execute("UPDATE products SET status = NOT status WHERE id = %s", (product_id,))
         conn.commit()
         cursor.close()
         conn.close()
         return True
     except mysql.connector.Error:
         return False
+    
+def obter_nome_cliente(user_id):
+    """Função para obter o nome do cliente pelo ID"""
+    conn = conectar_bd()
+    if not conn:
+        return "N/A"
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM users WHERE id = %s", (user_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return result[0] if result else "N/A"
+    except mysql.connector.Error:
+        return "N/A"
+
+def lista_pedidos():
+    """Função para listar todos os pedidos do banco de dados"""
+    conn = conectar_bd()
+    if not conn:
+        return []
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM orders")
+        pedidos = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return pedidos
+    except mysql.connector.Error:
+        return []
     
 
 

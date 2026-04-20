@@ -19,8 +19,7 @@
         <div class="login-container">
             <h2 class="text-center">Login</h2>
             
-            <!-- Exibe erro se o Flask enviar a variável 'error' -->
-            {% if error %}
+            {% if error %}  
                 <div class="alert alert-danger" role="alert">{{ error }}</div>
             {% endif %}
 
