@@ -166,8 +166,8 @@
                                 <td>Chá de Camomila (2x)</td>
                                 <td><span class="status ativo">Concluído</span></td>
                                 <td>
-                                    <button class="btn-acao btn-editar" title="Ver detalhes">
-                                        <i class="ph ph-pencil-simple"></i>
+                                    <button class="btn-acao btn-detalhes" title="Ver detalhes">
+                                        <i class="ph ph-eye"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -175,10 +175,10 @@
                                 <td>Maria Oliveira</td>
                                 <td>maria.oli@email.com</td>
                                 <td>Chá Verde Detox (1x)</td>
-                                <td><span class="status inativo">Pendente</span></td>
+                                <td><span class="status pendente">Pendente</span></td>
                                 <td>
-                                    <button class="btn-acao btn-editar" title="Ver detalhes">
-                                        <i class="ph ph-pencil-simple"></i>
+                                    <button class="btn-acao btn-detalhes" title="Ver detalhes">
+                                        <i class="ph ph-eye"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -190,21 +190,24 @@
             <div id="tela-acessibilidade" class="tela-secao" style="display: none;">
                 <header class="topo-painel">
                     <div>
-                        <h1>Acessibilidade e Preferências</h1>
+                        <h1>Aparência e Preferências</h1>
                         <p>Personalize o sistema para a sua necessidade.</p>
                     </div>
                 </header>
 
                 <section class="secao-card card-padding">
                     <div class="opcao-preferencia">
-                        <h3>Aparência</h3>
-                        <label>Cor Principal do Sistema:</label>
-                        <input type="color" id="seletor-cor" value="#6b8e6b">
+                        <h3>Tema do Sistema</h3>
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--cor-texto-principal); font-weight: 500;">
+                            <input type="checkbox" id="toggle-dark-mode" style="width: 18px; height: 18px; accent-color: var(--cor-principal); cursor: pointer;">
+                            Ativar Modo Escuro
+                        </label>
+                        <p class="info-texto">Muda as cores do painel para tons escuros, ideal para ambientes com pouca luz.</p>
                     </div>
                     <hr>
                     <div class="opcao-preferencia">
                         <h3>Assistência</h3>
-                        <label>Libras:</label>
+                        <label>Libras:</label><br><br>
                         <button class="btn-adicionar" id="btn-libras">Ativar VLibras</button>
                         <p class="info-texto">Ativa o assistente virtual para tradução em LIBRAS.</p>
                     </div>
@@ -237,6 +240,8 @@
             </form>
         </div>
     </div>
+
+    <div id="toast-container"></div>
 
     <script src="script.js"></script>
 </body>

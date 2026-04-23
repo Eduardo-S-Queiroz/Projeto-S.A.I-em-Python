@@ -78,7 +78,11 @@ btnConfirmar.addEventListener('click', (e) => {
     const qtd = document.getElementById('input-qtd').value;
     const preco = document.getElementById('input-preco').value;
 
-    if (!nome || !qtd || !preco) return alert("Preencha todos os campos!");
+    // VALIDAÇÃO COM TOAST
+    if (!nome || !qtd || !preco) {
+        mostrarToast("Preencha todos os campos do formulário!", "erro");
+        return;
+    }
 
     if (linhaSendoEditada) {
         // MODO EDIÇÃO: Atualiza os dados na linha existente
@@ -105,6 +109,9 @@ btnConfirmar.addEventListener('click', (e) => {
         corpoTabela.appendChild(tr);
     }
     
+    // SUCESSO COM TOAST
+    mostrarToast("Chá salvo com sucesso!", "sucesso");
+
     // Fecha o modal após salvar
     modal.style.display = 'none';
 });
@@ -113,11 +120,13 @@ btnConfirmar.addEventListener('click', (e) => {
 /* =========================================
    5. AÇÕES NA TABELA (DELEGAÇÃO DE EVENTOS)
    ========================================= */
-corpoTabela.addEventListener('click', (e) => {
-    const btn = e.target.closest('button'); // Ajustado para pegar o botão mesmo clicando no ícone
+// Como usamos delegação, ouvimos os cliques no documento inteiro para as tabelas
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
     if (!btn) return;
     
     const linha = btn.closest('tr');
+    if (!linha) return;
 
     // Lógica para DESATIVAR / ATIVAR produto
     if (btn.classList.contains('btn-toggle-status')) {
@@ -128,12 +137,12 @@ corpoTabela.addEventListener('click', (e) => {
             badge.innerText = "Inativo";
             badge.classList.replace('ativo', 'inativo');
             linha.classList.add('linha-inativa'); 
-            btn.title = "Ativar chá"; // Muda a dica do mouse
+            btn.title = "Ativar chá"; 
         } else {
             badge.innerText = "Ativo";
             badge.classList.replace('inativo', 'ativo');
             linha.classList.remove('linha-inativa'); 
-            btn.title = "Desativar chá"; // Muda a dica do mouse
+            btn.title = "Desativar chá"; 
         }
     }
 
@@ -145,10 +154,15 @@ corpoTabela.addEventListener('click', (e) => {
         // Puxa os dados da tabela para os inputs do modal
         document.getElementById('input-nome').value = linha.cells[0].innerText;
         document.getElementById('input-qtd').value = linha.cells[2].innerText;
-        // Limpa o "R$" para deixar só o número no input de preço
         document.getElementById('input-preco').value = linha.cells[3].innerText.replace('R$ ', '').replace(',', '.');
         
         modal.style.display = 'flex';
+    }
+
+    // Lógica para VER DETALHES do pedido
+    if (btn.classList.contains('btn-detalhes')) {
+        const nomeCliente = linha.cells[0].innerText;
+        mostrarToast(`Abrindo detalhes do pedido de ${nomeCliente}...`, "info");
     }
 });
 
@@ -156,11 +170,17 @@ corpoTabela.addEventListener('click', (e) => {
 /* =========================================
    6. ACESSIBILIDADE E PREFERÊNCIAS
    ========================================= */
-// Troca de Cor do Sistema
-document.getElementById('seletor-cor').addEventListener('input', (e) => {
-    const cor = e.target.value;
-    // Como organizamos o CSS com variáveis, basta mudar a variável root!
-    document.documentElement.style.setProperty('--cor-principal', cor);
+// Ativar/Desativar Modo Escuro
+const toggleDarkMode = document.getElementById('toggle-dark-mode');
+
+toggleDarkMode.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        document.body.classList.add('dark-mode');
+        mostrarToast("Modo escuro ativado!", "sucesso");
+    } else {
+        document.body.classList.remove('dark-mode');
+        mostrarToast("Modo claro ativado!", "info");
+    }
 });
 
 // Ativar VLibras
@@ -168,7 +188,6 @@ const btnLibras = document.getElementById('btn-libras');
 btnLibras.addEventListener('click', () => {
     // Verifica se o widget já não foi carregado para não duplicar
     if (!document.querySelector('[vw]')) {
-        // Cria a estrutura do VLibras dinamicamente no HTML
         const div = document.createElement('div');
         div.setAttribute('vw', '');
         div.classList.add('enabled');
@@ -178,13 +197,11 @@ btnLibras.addEventListener('click', () => {
         `;
         document.body.appendChild(div);
 
-        // Adiciona o Script do VLibras
         const script = document.createElement('script');
         script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
         script.onload = () => new window.VLibras.Widget('https://vlibras.gov.br/app');
         document.head.appendChild(script);
         
-        // Atualiza o visual do botão
         btnLibras.innerText = "VLibras Ativado";
         btnLibras.style.background = "#2ecc71";
     }
@@ -200,16 +217,16 @@ const dropPerfil = document.getElementById('drop-perfil');
 
 // Abrir aba de Notificações
 btnNotificacao.addEventListener('click', (e) => {
-    e.stopPropagation(); // Evita que feche imediatamente ao clicar
+    e.stopPropagation(); 
     dropNotificacao.style.display = dropNotificacao.style.display === 'block' ? 'none' : 'block';
-    dropPerfil.style.display = 'none'; // Fecha o outro se estiver aberto
+    dropPerfil.style.display = 'none'; 
 });
 
 // Abrir aba de Log-off
 btnPerfil.addEventListener('click', (e) => {
     e.stopPropagation();
     dropPerfil.style.display = dropPerfil.style.display === 'block' ? 'none' : 'block';
-    dropNotificacao.style.display = 'none'; // Fecha o outro
+    dropNotificacao.style.display = 'none'; 
 });
 
 // Fechar menus se clicar fora deles
@@ -222,12 +239,43 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Piada do Ajuda (Question Mark)
+// Piada do Ajuda (Question Mark) - COM TOAST
 document.getElementById('btn-ajuda').addEventListener('click', () => {
-    alert("Área de Administrador!\n\nAqui editamos produtos, estoques e identificamos pedidos.\n\n⚠️ Se você não tem autorização para estar aqui, é melhor você 'dei-chá' essa página antes que queime a língua! ☕🔥");
+    mostrarToast("Área restrita para administradores! Se você não é admin, é melhor 'dei-chá' essa página pra lá! ☕🏃‍♂️", "aviso");
 });
 
-// Botão Voltar para Loja (Logout)
+// Botão Voltar para Loja (Logout) - COM TOAST
 document.getElementById('btn-voltar-loja').addEventListener('click', () => {
-    alert("Fazendo log-off... Você será redirecionado para a vitrine principal da loja.");
+    mostrarToast("Fazendo log-off... Redirecionando.", "info");
 });
+
+/* =========================================
+   8. SISTEMA DE TOAST NOTIFICATIONS
+   ========================================= */
+function mostrarToast(mensagem, tipo = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.classList.add('toast', tipo);
+
+    // Define o ícone baseado no tipo
+    let icone = 'ph-info';
+    if (tipo === 'erro') icone = 'ph-x-circle';
+    if (tipo === 'sucesso') icone = 'ph-check-circle';
+    if (tipo === 'aviso') icone = 'ph-warning';
+
+    toast.innerHTML = `
+        <i class="ph ${icone}"></i>
+        <span>${mensagem}</span>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('mostrar');
+    }, 10);
+
+    setTimeout(() => {
+        toast.classList.remove('mostrar');
+        setTimeout(() => toast.remove(), 400); 
+    }, 3000);
+}
