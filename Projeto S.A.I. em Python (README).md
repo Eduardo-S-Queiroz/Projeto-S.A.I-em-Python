@@ -100,50 +100,7 @@ pip install Flask mysql-connector-python python-dotenv
 ### 4. Configurar o Banco de Dados
 
 1.Crie um banco de dados MySQL para o projeto (ex: `sai_db`).
-2.  Crie as tabelas `users`, `products` e `categories`. Um exemplo de esquema pode ser:
-
-    ```sql
-    CREATE DATABASE IF NOT EXISTS sai_db;
-    USE sai_db;
-
-    CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS categories (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL UNIQUE
-    );
-
-    CREATE TABLE IF NOT EXISTS products (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        price DECIMAL(10, 2) NOT NULL,
-        category_id INT,
-        image VARCHAR(255),
-        stock INT NOT NULL DEFAULT 0,
-        slug VARCHAR(255) UNIQUE,
-        featured BOOLEAN DEFAULT FALSE,
-        FOREIGN KEY (category_id) REFERENCES categories(id)
-    );
-
-    -- Inserir um usuário de exemplo para teste
-    INSERT INTO users (email, password) VALUES (
-        'teste@example.com', 'senha123'
-    );
-
-    -- Inserir categorias de exemplo
-    INSERT INTO categories (name) VALUES ('Eletrônicos'), ('Roupas'), ('Alimentos');
-
-    -- Inserir produtos de exemplo
-    INSERT INTO products (name, description, price, category_id, image, stock, slug, featured) VALUES
-    ('Smartphone X', 'Um smartphone poderoso.', 1500.00, 1, 'smartphone.jpg', 50, 'smartphone-x', TRUE),
-    ('Camiseta Básica', 'Camiseta de algodão confortável.', 50.00, 2, 'camiseta.jpg', 200, 'camiseta-basica', FALSE),
-    ('Arroz Integral 1kg', 'Arroz integral orgânico.', 10.00, 3, 'arroz.jpg', 100, 'arroz-integral-1kg', FALSE);
-    ```
+2.  Crie as tabelas `users`, `products` e `categories`. 
 
 ### 5. Configurar Variáveis de Ambiente
 
