@@ -165,6 +165,22 @@ def obter_nome_cliente(user_id):
     except mysql.connector.Error:
         return "N/A"
 
+def obeter_nome_categoria(category_id):
+    """Função para obter o nome da categoria pelo ID"""
+    conn = conectar_bd()
+    if not conn:
+        return "N/A"
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM categories WHERE id = %s", (category_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return result[0] if result else "N/A"
+    except mysql.connector.Error:
+        return "N/A"
+
 def lista_pedidos():
     """Função para listar todos os pedidos do banco de dados"""
     conn = conectar_bd()
