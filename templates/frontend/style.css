@@ -1,0 +1,522 @@
+/* =========================================
+   1. VARIÁVEIS DE CORES (VIBE BOTÂNICA)
+   ========================================= */
+:root {
+  --cor-principal: #6b8e6b;       /* Verde Sálvia (Botões e Destaques) */
+  --cor-principal-hover: #587558; /* Verde mais escuro para hover */
+  --cor-alerta: #eab308;          /* Ouro/Mostarda (Editar) */
+  --cor-alerta-hover: #ca8a04;
+  --fundo-pagina: #f4f1ea;        /* Creme claro quente (Fundo do site) */
+  --fundo-card: #ffffff;          /* Branco para os cartões flutuantes */
+  --fundo-sidebar: #2c332c;       /* Verde Oliva muito escuro (Menu Lateral) */
+  --cor-borda: #e0dcd3;           /* Cinza/Creme escuro para bordas */
+  --cor-texto-principal: #2d312d; /* Verde/Cinza quase preto para textos */
+  --cor-texto-mutado: #7a7d7a;    /* Cinza esverdeado para legendas */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', 'Segoe UI', sans-serif; 
+}
+
+/* Fundo claro e texto escuro */
+body {
+  background-color: var(--fundo-pagina);
+  color: var(--cor-texto-principal);
+  transition: background 0.3s;
+}
+
+.container-geral {
+  display: flex;
+  height: 100vh;
+}
+
+/* =========================================
+   2. MENU LATERAL (ESCURO/ELEGANTE)
+   ========================================= */
+.menu-lateral {
+  width: 260px;
+  background-color: var(--fundo-sidebar);
+  padding: 30px 15px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px; /* Espaço entre a folha e o texto */
+  margin-bottom: 40px;
+  color: #a3b18a; /* Verde claro destacando o logo */
+}
+
+.logo-area i {
+  font-size: 2rem; /* Tamanho do ícone de folha */
+}
+
+.logo-area h2 {
+  margin-bottom: 0;
+  text-align: center;
+  letter-spacing: 1px;
+  font-size: 1.4rem;
+}
+
+.menu-lateral ul {
+  list-style: none;
+}
+
+.item-menu {
+  padding: 14px 20px;
+  margin-bottom: 10px;
+  color: #9ca3af; /* Cinza claro */
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-menu i {
+  font-size: 1.3rem; /* Tamanho dos ícones do menu */
+  min-width: 24px;   /* Garante alinhamento perfeito dos textos */
+}
+
+.item-menu:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.item-menu.ativo {
+  background: #a3b18a; /* Fundo verde claro */
+  color: #1a1f1a; /* Texto escuro no menu ativo */
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(163, 177, 138, 0.2);
+}
+
+/* =========================================
+   3. ÁREA PRINCIPAL E CABEÇALHO
+   ========================================= */
+.area-principal {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.topo-painel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.topo-painel h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--cor-texto-principal);
+  margin-bottom: 5px;
+}
+
+.topo-painel p {
+  color: var(--cor-texto-mutado);
+}
+
+/* =========================================
+   4. ÍCONES DO TOPO E BARRA DE BUSCA INTERNA
+   ========================================= */
+/* Ícones Superiores */
+.icones-usuario {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  margin-bottom: 10px;
+  font-size: 1.6rem;
+  color: var(--cor-texto-mutado);
+}
+
+.icones-usuario i {
+  cursor: pointer;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.icones-usuario i:hover {
+  color: var(--cor-principal);
+  transform: translateY(-2px);
+}
+
+/* Cabeçalho que agrupa título da tabela e busca */
+.cabecalho-tabela-interna {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.caixa-busca {
+  position: relative;
+  width: 350px; 
+}
+
+.caixa-busca i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8fa08f; /* Verde suave para o ícone da lupa */
+  font-size: 1.2rem;
+}
+
+.input-busca {
+  width: 100%;
+  padding: 12px 15px 12px 45px; 
+  background: transparent;
+  border: 2px solid #a3b18a; /* Borda verde clara */
+  border-radius: 8px;
+  color: var(--cor-texto-principal);
+  font-size: 0.95rem;
+  transition: all 0.3s;
+}
+
+.input-busca::placeholder { color: #8fa08f; }
+
+.input-busca:focus {
+  border-color: var(--cor-principal);
+  outline: none;
+  background: #ffffff; /* Fica branco puro quando clica */
+  box-shadow: 0 4px 15px rgba(107, 142, 107, 0.15);
+}
+
+/* =========================================
+   5. TABELA (ESTILO CARTÃO CORPORATIVO)
+   ========================================= */
+.secao-card {
+  background: var(--fundo-card);
+  border-radius: 16px;
+  padding: 30px; 
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); 
+}
+
+table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
+thead {
+  background-color: #92a78d; 
+}
+
+th {
+  color: white !important; 
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 16px 25px;
+  text-align: center; /* Mudou de left para center */
+}
+
+th:first-child { 
+  border-radius: 12px 0 0 0; 
+  text-align: left; 
+}
+th:last-child { 
+  border-radius: 0 12px 0 0; 
+}
+
+tbody tr {
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+tbody td {
+  padding: 18px 25px;
+  font-size: 0.95rem;
+  text-align: center; /* Mudou de left para center */
+  border-bottom: 1px solid #f0f0f0; 
+}
+
+tbody tr:hover {
+  background: rgba(163, 177, 138, 0.08); 
+}
+
+/* Efeito Zebrado Nas Tabelas (Linha sim, linha não) */
+tbody tr:nth-child(even) {
+  background-color: rgba(163, 177, 138, 0.04); /* Um verdinho beeeem suave */
+}
+
+tbody td:first-child { 
+  border-radius: 0; 
+  font-weight: 500; 
+  text-align: left; 
+}
+tbody td:last-child { 
+  border-radius: 0; 
+}
+
+/* =========================================
+   6. BOTÕES PRINCIPAIS E TAGS DE STATUS
+   ========================================= */
+.btn-adicionar {
+  background: var(--cor-principal);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-adicionar:hover {
+  background: var(--cor-principal-hover);
+  transform: translateY(-2px);
+}
+
+/* Status Labels */
+.status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border: none;
+  display: inline-block; 
+}
+
+.status.ativo { background: #e6f4ea; color: #1e8e3e; }
+.status.inativo { background: #fce8e6; color: #d93025; }
+.status.pendente { background: #fef08a; color: #a16207; }
+
+/* =========================================
+   7. JANELA MODAL E ACESSIBILIDADE
+   ========================================= */
+.janela-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(44, 51, 44, 0.7); 
+  backdrop-filter: blur(5px); 
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-conteudo {
+  background: var(--fundo-card);
+  padding: 40px;
+  border-radius: 20px;
+  width: 480px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-conteudo h2 { text-align: center; margin-bottom: 30px; color: var(--cor-principal); }
+
+.campo-modal { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.campo-modal label { color: var(--cor-texto-principal); font-weight: 600; font-size: 0.9rem; }
+.campo-modal input {
+  padding: 12px; background: #f9f9f9; border: 1px solid var(--cor-borda);
+  color: var(--cor-texto-principal); border-radius: 8px; outline: none; transition: 0.3s;
+}
+.campo-modal input:focus { border-color: var(--cor-principal); }
+
+.modal-botoes { display: flex; gap: 15px; margin-top: 10px; }
+.btn-salvar { background: var(--cor-principal); border: none; color: white; padding: 12px; border-radius: 8px; flex: 2; font-weight: bold; cursor: pointer; }
+.btn-cancelar { background: #e5e7eb; border: none; color: #4b5563; padding: 12px; border-radius: 8px; flex: 1; font-weight: bold; cursor: pointer; }
+
+/* Acessibilidade */
+.card-padding { padding: 40px; }
+.opcao-preferencia { margin-bottom: 25px; }
+.opcao-preferencia h3 { margin-bottom: 15px; color: var(--cor-principal); }
+.info-texto { font-size: 0.8rem; color: var(--cor-texto-mutado); margin-top: 5px; }
+hr { border: 0; border-top: 1px solid var(--cor-borda); margin: 20px 0; }
+
+/* =========================================
+   8. AÇÕES NA TABELA (Botões Minimalistas)
+   ========================================= */
+td:last-child { 
+  display: flex;
+  justify-content: center; /* Mudou de flex-start para center */
+  align-items: center;
+  gap: 8px; 
+}
+
+.btn-acao {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cor-texto-mutado); 
+}
+
+.btn-acao i { font-size: 1.4rem; }
+
+.btn-editar:hover {
+  background: #fef08a; 
+  color: var(--cor-alerta-hover); 
+}
+
+.btn-toggle-status:hover {
+  background: #fee2e2; 
+  color: #ef4444; 
+}
+
+.btn-detalhes:hover {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+/* =========================================
+   9. MENUS SUSPENSOS (TOPO) E MELHORIAS VISUAIS
+   ========================================= */
+.icone-wrapper { position: relative; padding: 5px; }
+
+.bolinha-aviso { 
+  position: absolute; top: 0; right: 2px; width: 8px; height: 8px; 
+  background: #eab308; border-radius: 50%; 
+}
+
+.caixa-dropdown { 
+  display: none; position: absolute; top: 40px; right: 0; 
+  background: white; border: 1px solid var(--cor-borda); border-radius: 12px; 
+  padding: 15px; width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+  z-index: 100; text-align: left;
+}
+
+.caixa-dropdown h4 { margin-bottom: 10px; color: var(--cor-principal); font-size: 0.9rem; }
+.caixa-dropdown p { font-size: 0.85rem; padding: 8px 0; border-bottom: 1px solid #eee; color: var(--cor-texto-principal); }
+.caixa-dropdown p:last-child { border-bottom: none; }
+
+#btn-voltar-loja { 
+  width: 100%; padding: 10px; background: #fce8e6; color: #d93025; 
+  border: none; border-radius: 8px; font-weight: bold; cursor: pointer; 
+  display: flex; align-items: center; justify-content: center; gap: 8px; 
+}
+#btn-voltar-loja:hover { background: #fad2ce; }
+
+/* Visual da linha quando o item for Desativado */
+.linha-inativa { background-color: #f6f6f6 !important; }
+.linha-inativa td { color: #a1a1aa; }
+.linha-inativa .status { opacity: 0.6; }
+
+.linha-inativa .btn-toggle-status:hover {
+  background: #dcfce7;
+  color: #22c55e;
+}
+
+@media (max-width: 768px) {
+  .container-geral { flex-direction: column; }
+  .menu-lateral { width: 100%; box-shadow: none; padding: 15px; }
+  .menu-lateral ul { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; }
+  .item-menu { margin-bottom: 0; white-space: nowrap; }
+  .topo-painel { flex-direction: column; align-items: flex-start; gap: 15px; }
+  .cabecalho-tabela-interna { flex-direction: column; align-items: flex-start; gap: 15px; }
+  .caixa-busca { width: 100%; }
+  .secao-card { overflow-x: auto; padding: 20px; }
+}
+
+/* =========================================
+   10. TOAST NOTIFICATIONS
+   ========================================= */
+#toast-container {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toast {
+  background-color: var(--fundo-card);
+  color: var(--cor-texto-principal);
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  /* Estado inicial (escondido à direita) */
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Efeito bounce */
+}
+
+/* Estado final (visível) */
+.toast.mostrar {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Cores da bordinha e ícone de acordo com o status */
+.toast.erro { border-left: 4px solid #ef4444; }
+.toast.sucesso { border-left: 4px solid #22c55e; }
+.toast.info { border-left: 4px solid #3b82f6; }
+.toast.aviso { border-left: 4px solid #eab308; }
+
+.toast i { font-size: 1.5rem; }
+.toast.erro i { color: #ef4444; }
+.toast.sucesso i { color: #22c55e; }
+.toast.info i { color: #3b82f6; }
+.toast.aviso i { color: #eab308; }
+
+/* =========================================
+   11. MODO ESCURO (DARK MODE)
+   ========================================= */
+body.dark-mode {
+  --fundo-pagina: #121212;        /* Fundo principal quase preto */
+  --fundo-card: #1e1e1e;          /* Fundo dos cartões cinza muito escuro */
+  --cor-texto-principal: #f5f5f5; /* Texto branco/gelo */
+  --cor-texto-mutado: #a1a1aa;    /* Texto secundário acinzentado */
+  --cor-borda: #333333;           /* Bordas mais escuras */
+  --fundo-sidebar: #0a0c0a;       /* Menu lateral ainda mais escuro para contrastar */
+}
+
+/* Ajustes finos para inputs e tabelas no Dark Mode */
+body.dark-mode .input-busca, 
+body.dark-mode .campo-modal input {
+  background: #2a2a2a;
+  color: #f5f5f5;
+  border-color: #444;
+}
+
+body.dark-mode .input-busca:focus,
+body.dark-mode .campo-modal input:focus {
+  background: #1e1e1e;
+  border-color: var(--cor-principal);
+}
+
+body.dark-mode thead {
+  background-color: #2a332a; /* Verde bem escuro para combinar com o tema botânico */
+}
+
+body.dark-mode tbody td {
+  border-bottom: 1px solid #333;
+}
+
+body.dark-mode tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .caixa-dropdown {
+  background: #1e1e1e;
+  border-color: #333;
+}
+
+body.dark-mode .caixa-dropdown p {
+  border-bottom-color: #333;
+}
+
+body.dark-mode .toast {
+  border-color: #444; /* Borda do toast mais escura */
+}
