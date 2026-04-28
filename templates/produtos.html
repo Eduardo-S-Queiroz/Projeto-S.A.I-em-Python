@@ -86,6 +86,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Cliente</th>
+                        <th>Email</th>
                         <th>Produto</th>
                         <th>Total</th>
                         <th>Status</th>
@@ -96,6 +97,7 @@
                         <tr>
                             <td>{{ pedido.id if pedido.id is defined else pedido['id'] if pedido['id'] is defined else '' }}</td>
                             <td>{{ pedido['cliente'] if 'cliente' in pedido else pedido['nome_cliente'] if 'nome_cliente' in pedido else '' }}</td>
+                            <td>{{ pedido['email'] if 'email' in pedido else '' }}</td>
                             <td>{{ pedido['produto'] if 'produto' in pedido else '' }}</td>
                             <td>R$ {{ "%.2f" | format(pedido['total_price'] | float) if 'total_price' in pedido else '0.00' }}</td>
                             <td>{{ pedido.status if pedido.status is defined else pedido['status'] if pedido['status'] is defined else '' }}</td>

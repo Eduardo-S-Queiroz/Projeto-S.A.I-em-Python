@@ -1,7 +1,13 @@
 import os
+import sys
 import json
 from flask import Flask, render_template, request, redirect, url_for
-from api import listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, cadastrar_produto, status_produto, atualizar_produto, obter_nome_cliente, obeter_nome_categoria
+
+# Add the current directory to sys.path to allow imports from the same directory
+sys.path.insert(0, os.path.dirname(__file__))
+
+from api import listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, cadastrar_produto, status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria
+from api import obter_email
 
 # Configurar caminhos
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,6 +42,7 @@ def produtos():
     # Busca a lista de produtos e pedidos antes de renderizar
     lista_de_produtos = listar_produtos()
     lista_de_pedidos = lista_pedidos()
+    lista_de_categorias = listar_categorias()
 
     # Converter status dos produtos 
     for produto in lista_de_produtos:
@@ -47,8 +54,9 @@ def produtos():
         produto['featured'] = 'ativo' if featured else 'inativo'
         
         if 'category_id' in produto:
-           produto['category'] = obeter_nome_categoria(produto['category_id'])
+           produto['category'] = obter_nome_categoria(produto['category_id'])
 
+    # Converter os itens dos pedidos para exibir o nome do produto e calcular o preço total
     for pedido in lista_de_pedidos:
         pedido['cliente'] = ''
         pedido['produto'] = ''
@@ -56,6 +64,7 @@ def produtos():
 
         if pedido.get('user_id') is not None:
             pedido['cliente'] = obter_nome_cliente(pedido['user_id'])
+            pedido['email'] = obter_email(pedido['user_id'])
 
         itens_json = pedido.get('items') or pedido.get('itens')
         if itens_json:
@@ -84,8 +93,71 @@ def produtos():
             except Exception:
                 pedido['produto'] = str(itens_json)
                 pedido['price'] = ''
+                
+    # Verificar se é uma requisição POST para atualizar um produto ou status
+    if request.method == 'POST':
+        # Verificar se é uma atualização de produto
+        if 'product_id' in request.form:
+            product_id = request.form['product_id']
+            code = request.form['code']
+            name = request.form['name']
+            description = request.form['description']
+            price = request.form['price']
+            category_id = request.form['category_id']
+            image = request.form['image']
+            stock = request.form['stock']
+            slug = request.form['slug']
+            featured = 1 if 'featured' in request.form else 0
+            
+            atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
+        
+        # Verificar se é uma atualização de status
+        elif 'status_product_id' in request.form:
+            product_id = request.form['status_product_id']
+            status_produto(product_id)
 
-    return render_template('produtos.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos)
+        return redirect(url_for('produtos'))
+    
+    #consultar categorias para exibir no dropdown de edição
+    lista_de_categorias = listar_categorias()
+    
+    #ultilizando a função consultar_produto para obter os detalhes do produto para exibir no modal de edição
+    for produto in lista_de_produtos:
+        produto_id = produto.get('id') or produto.get('id')
+        detalhes_produto = consultar_produto(produto_id)
+        if detalhes_produto:
+            produto['details'] = detalhes_produto
+        else:
+            produto['details'] = {}
+            
+    #ultilizando a função cadastrar_produto para cadastrar um novo produto caso os campos de cadastro sejam preenchidos
+    if request.method == 'POST' and 'new_product' in request.form:
+        code = request.form['new_code']
+        name = request.form['new_name']
+        description = request.form['new_description']
+        price = request.form['new_price']
+        category_id = request.form['new_category_id']
+        image = request.form['new_image']
+        stock = request.form['new_stock']
+        slug = request.form['new_slug']
+        featured = 1 if 'new_featured' in request.form else 0
+        
+        cadastrar_produto(code, name, description, price, category_id, image, stock, slug, featured)
+        
+        return redirect(url_for('produtos'))
+    
+    # Verificar se as listas estão vazias e renderizar a página com mensagens de erro apropriadas
+    
+    if not lista_de_produtos:
+        return render_template('produtos.html', produtos=[], pedidos=lista_de_pedidos, error="Nenhum produto encontrado.")
+    
+    if not lista_de_pedidos:
+        return render_template('produtos.html', produtos=lista_de_produtos, pedidos=[], error="Nenhum pedido encontrado.")
+    
+    if lista_de_categorias is None:
+        return render_template('produtos.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, error="Erro ao carregar categorias.")
+
+    return render_template('produtos.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias)
 
 if __name__ == '__main__':
     app.run(debug=True)
