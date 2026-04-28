@@ -3,11 +3,12 @@ import sys
 import json
 from flask import Flask, render_template, request, redirect, url_for
 
-# Add the current directory to sys.path to allow imports from the same directory
+# Adicionar o diretório atual ao sys.path para garantir que o módulo api seja encontrado
 sys.path.insert(0, os.path.dirname(__file__))
 
-from api import listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, cadastrar_produto, status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria
-from api import obter_email
+from api import ( listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
+cadastrar_produto, status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email )
+
 
 # Configurar caminhos
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
