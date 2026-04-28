@@ -3,16 +3,20 @@ import json
 from flask import Flask, render_template, request, redirect, url_for
 from api import listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, cadastrar_produto, status_produto, atualizar_produto, obter_nome_cliente, obeter_nome_categoria
 
-# Configurar caminhos
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
-STATIC_DIR = os.path.join(BASE_DIR, 'templates', 'icon')
+# 1. Define o caminho base (onde o seu main.py está)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Inicializar Flask com as pastas
+# 2. Define o caminho do projeto raiz (um nível acima de backend)
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+
+# 3. Configura as pastas corretamente (elas estão na raiz do projeto)
+TEMPLATES_DIR = os.path.join(PROJECT_ROOT, 'templates')
+STATIC_DIR = os.path.join(PROJECT_ROOT, 'static')
+
+# 4. Inicializa o Flask usando essas variáveis
 app = Flask(__name__, 
             template_folder=TEMPLATES_DIR,
-            static_folder=STATIC_DIR,
-            static_url_path='/icon')
+            static_folder=STATIC_DIR) 
 
 # Rota de Login (Única responsável pela raiz '/')
 @app.route('/', methods=['GET', 'POST'])
@@ -24,15 +28,15 @@ def login():
         
         if verificar_login(email, password):
             
-            return redirect(url_for('produtos')) 
+            return redirect(url_for('index')) 
         else:
             return render_template('login.html', error="Email ou senha inválidos!")
             
     return render_template('login.html')
 
 # Rota de Produtos (Responsável por exibir a lista de produtos, tanto para GET quanto para POST)
-@app.route("/produtos.html", methods=['GET', 'POST'])
-def produtos():
+@app.route("/index", methods=['GET', 'POST'])
+def index():
     # Busca a lista de produtos e pedidos antes de renderizar
     lista_de_produtos = listar_produtos()
     lista_de_pedidos = lista_pedidos()
@@ -85,7 +89,7 @@ def produtos():
                 pedido['produto'] = str(itens_json)
                 pedido['price'] = ''
 
-    return render_template('produtos.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos)
+    return render_template('index.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos)
 
 if __name__ == '__main__':
     app.run(debug=True)

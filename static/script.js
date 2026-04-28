@@ -244,9 +244,12 @@ document.getElementById('btn-ajuda').addEventListener('click', () => {
     mostrarToast("Área restrita para administradores! Se você não é admin, é melhor 'dei-chá' essa página pra lá! ☕🏃‍♂️", "aviso");
 });
 
-// Botão Voltar para Loja (Logout) - COM TOAST
-document.getElementById('btn-voltar-loja').addEventListener('click', () => {
+// Botão Voltar para login - COM TOAST 
+document.getElementById('btn-voltar-login').addEventListener('click', () => {
     mostrarToast("Fazendo log-off... Redirecionando.", "info");
+    setTimeout(() => { 
+        window.location.href = "login.html";
+    }, 1500);
 });
 
 /* =========================================

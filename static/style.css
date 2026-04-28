@@ -129,6 +129,21 @@ body {
    4. ÍCONES DO TOPO E BARRA DE BUSCA INTERNA
    ========================================= */
 /* Ícones Superiores */
+
+.ph-ph-sign-out2 {
+  background-color: rgba(255, 0, 0, 0.151);
+  border-radius: 8px;
+  padding: 8px;
+  color: #d93025;
+  border-color: transparent;
+  position: relative;
+  left: -3px;
+  font-size: 1rem;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  cursor: pointer;
+}
+
+
 .icones-usuario {
   display: flex;
   justify-content: flex-end;
@@ -385,9 +400,9 @@ td:last-child {
 
 .caixa-dropdown { 
   display: none; position: absolute; top: 40px; right: 0; 
-  background: white; border: 1px solid var(--cor-borda); border-radius: 12px; 
-  padding: 15px; width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-  z-index: 100; text-align: left;
+  background: rgb(255, 255, 255); border: 1px solid var(--cor-borda); border-radius: 12px; 
+  padding: 18px; width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+  z-index: 100; text-align: center;
 }
 
 .caixa-dropdown h4 { margin-bottom: 10px; color: var(--cor-principal); font-size: 0.9rem; }
