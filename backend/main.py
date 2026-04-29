@@ -1,6 +1,11 @@
 import os
 import sys
 import json
+import dash
+import pandas as pd
+import plotly.express as px
+import calendar
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 
 # Adicionar o diretório atual ao sys.path para garantir que o módulo api seja encontrado
@@ -9,6 +14,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from api import ( listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
 cadastrar_produto, status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email )
 
+from dashboard import get_data_from_db
 
 # Configurar caminhos
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -44,11 +50,13 @@ def produtos():
     lista_de_produtos = listar_produtos()
     lista_de_pedidos = lista_pedidos()
     lista_de_categorias = listar_categorias()
+    
+    
 
     # Converter status dos produtos 
     for produto in lista_de_produtos:
         # Converte o campo status para ativo/inativo
-        status = produto.get('status') or produto.get('status') or 0
+        status = produto.get('status')
         produto['status'] = 'ativo' if status else 'inativo'
         
         featured = produto.get('featured') or produto.get('destaque') or 0
@@ -147,6 +155,7 @@ def produtos():
         
         return redirect(url_for('produtos'))
     
+    
     # Verificar se as listas estão vazias e renderizar a página com mensagens de erro apropriadas
     
     if not lista_de_produtos:
@@ -154,11 +163,83 @@ def produtos():
     
     if not lista_de_pedidos:
         return render_template('produtos.html', produtos=lista_de_produtos, pedidos=[], error="Nenhum pedido encontrado.")
-    
     if lista_de_categorias is None:
         return render_template('produtos.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, error="Erro ao carregar categorias.")
 
-    return render_template('produtos.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias)
+    
+    return render_template('produtos.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,)
+
+@app.route("/dashboard", methods=['GET'])
+@app.route("/dashboard.html", methods=['GET'])
+def dashboard():
+    df_orders, df_products = get_data_from_db()
+
+    # Criar gráficos usando Plotly
+    labels = {
+        'created_at': 'Data do Pedido',
+        'total_price': 'Total (R$)',
+        'date_column': 'Data do Pedido',
+        'category_name': 'Categoria'
+    }
+
+    # Faturamento Total
+    total_faturado = df_orders['total_price'].sum()
+
+    # Quantidade de Pedidos
+    total_pedidos = len(df_orders)
+
+    # Pega o ano e mês atuais automaticamente
+    hoje = datetime.now()
+    ano = hoje.year
+    mes = hoje.month
+
+    # Define o primeiro dia e o último dia dinamicamente
+    data_inicio = f"{ano}-{mes:02d}-01"
+    ultimo_dia = calendar.monthrange(ano, mes)[1]
+    data_fim = f"{ano}-{mes:02d}-{ultimo_dia}"
+
+    # Aplica a filtragem
+    df_filtrado = df_orders[
+        (df_orders['created_at'] >= data_inicio) & 
+        (df_orders['created_at'] <= data_fim)
+    ].copy()
+
+    # Gráfico de Vendas por Data
+    fig_sales = px.bar(
+        df_filtrado,
+        x = 'created_at',
+        y = 'total_price',
+        title = 'Vendas por Data',
+        labels = labels,
+        text_auto = '.2s',
+        color_discrete_sequence = ['#1f77b4'],
+        width = 1100
+    )
+    
+    fig_sales.update_layout(bargap=0.8)  # Ajusta o espaçamento entre as barras
+    
+    fig_sales.update_layout(
+        xaxis_title="Período",
+        yaxis_title="Faturamento (R$)",
+        template="plotly_white", # Fundo limpo
+        hovermode="x unified"    # Mostra os valores ao passar o mouse na linha
+    )
+
+    # Para formatar o R$ no eixo Y e nas barras
+    fig_sales.update_traces(texttemplate='R$ %{y:.2f}', textposition='outside')
+    
+    
+    fig_category = px.pie(
+        df_products,
+        names='category_name',
+        title='Distribuição de Produtos por Categoria',
+        labels=labels
+    )
+    
+    # Renderizar o template do dashboard com os gráficos
+    return render_template('dashboard.html', fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

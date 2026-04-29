@@ -47,6 +47,21 @@
 <body>
     <div class="container">
         <h1>Produtos</h1>
+        <tbody>
+            <thead> 
+                <tr>
+                   <th>
+                    <h2>Resumo</h2>
+                   </th>
+                </tr>
+            </thead>
+            {% if produtos and produtos|length > 0 %}
+                <p>Total de produtos: {{ produtos|length }}</p>
+                <P>estoque disponível: {{ produtos|sum(attribute='stock') }}</P>
+            {% else %}
+                <p>Total de produtos: 0</p>
+            {% endif %}
+        </tbody>    
         {% if produtos and produtos|length > 0 %}
             <table>
                 <thead>
@@ -108,6 +123,9 @@
         {% else %}
             <div class="empty">Nenhum pedido encontrado.</div>
         {% endif %}
+    </div>
+    <div>
+        <button><a href="/dashboard">Acessar Dashboard</a></button>
     </div>
 </body>
 </html>
