@@ -1,8 +1,7 @@
 import os
 import sys
 import json
-import dash
-import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
 import calendar
 from datetime import datetime
@@ -213,12 +212,14 @@ def dashboard():
         labels = labels,
         text_auto = '.2s',
         color_discrete_sequence = ['#1f77b4'],
-        width = 1100
+        width = 555,
+        
     )
     
-    fig_sales.update_layout(bargap=0.8)  # Ajusta o espaçamento entre as barras
+    fig_sales.update_layout(bargap=0.7)  # Ajusta o espaçamento entre as barras
     
     fig_sales.update_layout(
+        font=dict(family='Arial, sans-serif', size=13, color='#1e1e28'),
         xaxis_title="Período",
         yaxis_title="Faturamento (R$)",
         template="plotly_white", # Fundo limpo
@@ -229,15 +230,92 @@ def dashboard():
     fig_sales.update_traces(texttemplate='R$ %{y:.2f}', textposition='outside')
     
     
-    fig_category = px.pie(
-        df_products,
-        names='category_name',
-        title='Distribuição de Produtos por Categoria',
-        labels=labels
+    fig_category = px.scatter(
+        df_products, 
+        x='stock',     # You need an X axis for a line chart
+        y='price',    # You need a Y axis for a line chart
+        color='category_name', 
+        title='Relação Preço vs. Estoque por Categoria',
+        labels={'stock': 'Estoque', 'price': 'Preço (R$)', 'category_name': 'Categoria'}
+    )
+    
+    fig_category.update_layout(
+        font=dict(family='Arial, sans-serif', size=13, color='#1e1e28'),
+        xaxis_title="Estoque", 
+        yaxis_title="Preço (R$)",
+        template="plotly_white",    
+        legend_title="Categoria",
+        height=400,
+        width=550,
+        margin=dict(l=50, r=50, t=50, b=50),
+    )
+    
+    
+    # Chart 2: Distribuição de Status (Pizza)
+    if not df_orders.empty:
+        status_chart = px.pie( 
+                df_orders.groupby('status').size().reset_index(name='count'),
+                names='status',
+                values='count',
+                title='Distribuição de Status dos Pedidos',
+                hole=0.4,
+                color='status',
+                color_discrete_map={
+                    'completed': "rgb(0, 204, 150)",
+                    'pending': "rgb(255, 161, 90)",
+                    'shipped': "rgb(59, 72, 246)",
+                    'canceled': "rgb(239, 68, 68)"
+                },
+                template='plotly_white'
+            )
+    else:
+            status_chart = go.Figure()
+            status_chart.add_annotation(text="Sem dados de pedidos")
+        
+    status_chart.update_layout(
+            font=dict(family='Arial, sans-serif', size=12, color='#1e1e28'),
+            height=400,
+            margin=dict(l=50, r=50, t=50, b=50),
+           
+    )
+    
+    
+    
+    if not df_products.empty:
+        # 1. Agrupar, somar quantidades e pegar os 5 maiores
+        top_5_df = df_products.groupby('name')['stock'].sum().nlargest(5).reset_index()
+    
+        # 2. Criar o gráfico de barras horizontais
+        top_products_chart = px.line(
+            top_5_df,
+            x='stock',
+            y='name',
+            orientation='h', # Define como horizontal
+            title='Top 5 Produtos Mais Vendidos',
+            text='stock', # Exibe o valor sobre a barra
+            labels={'stock': 'Estoque', 'name': 'Produto'},
+            template='plotly_white',
+            color_discrete_sequence=["rgb(59, 125, 246)"] # Azul similar ao dashboard
+        )
+        
+        # Ajustar para que a maior barra fique no topo
+        top_products_chart.update_layout(yaxis={'categoryorder': 'total ascending'})
+
+    else:
+        top_products_chart = go.Figure()
+        top_products_chart.add_annotation(text="Sem dados de produtos")
+
+    # Padronização de layout (conforme seu exemplo)
+    top_products_chart.update_layout(
+        font=dict(family='Arial, sans-serif, negrito', size=13, color='#1e1e28'),
+        height=400,
+        width=580,
+        barmode='group',
+        margin=dict(l=50, r=50, t=50, b=50),
     )
     
     # Renderizar o template do dashboard com os gráficos
-    return render_template('dashboard.html', fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
+    return render_template('dashboard.html', top_products_chart=top_products_chart.to_html(full_html=False), status_chart=status_chart.to_html(full_html=False), fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
 
 
 
