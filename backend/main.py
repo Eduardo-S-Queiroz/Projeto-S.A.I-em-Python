@@ -5,13 +5,13 @@ import plotly.graph_objects as go
 import plotly.express as px
 import calendar
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 
 # Adicionar o diretório atual ao sys.path para garantir que o módulo api seja encontrado
 sys.path.insert(0, os.path.dirname(__file__))
 
 from api import ( listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
-cadastrar_produto, status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email )
+cadastrar_produto, editar_status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email, detalhes_pedido )
 
 from dashboard import get_data_from_db
 
@@ -47,7 +47,7 @@ def login():
     return render_template('login.html')
 
 # Rota de Produtos (Responsável por exibir a lista de produtos, tanto para GET quanto para POST)
-@app.route("/index", methods=['GET', 'POST'])
+@app.route("/index.html", methods=['GET', 'POST'])
 def index():
     # Busca a lista de produtos e pedidos antes de renderizar
     lista_de_produtos = listar_produtos()
@@ -123,12 +123,34 @@ def index():
             
             atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
         
-        # Verificar se é uma atualização de status
-        elif 'status_product_id' in request.form:
-            product_id = request.form['status_product_id']
-            status_produto(product_id)
+    # Verificar se é uma atualização de status e chamar a função editar_status_produto do backend
+    # Trecho do seu main.py corrigido
+    if 'status_product_id' in request.form:
+        status_product_id = request.form['status_product_id']
+        new_status = int(request.form['new_status']) 
+        
+        # Agora a função aceita os dois parâmetros!
+        sucesso = editar_status_produto(status_product_id, new_status)
+        
+        from flask import jsonify
+        return jsonify({"success": sucesso})
+    if 'product_id' in request.form:
+        product_id = request.form['product_id']
+        code = request.form['code']
+        name = request.form['name']
+        description = request.form['description']
+        price = request.form['price']
+        category_id = request.form['category_id']
+        image = request.form['image']
+        stock = request.form['stock']
+        slug = request.form['slug']
+        featured = 1 if 'featured' in request.form else 0
 
-        return redirect(url_for('index'))
+        atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
+        
+        return redirect(url_for('index')) # Isso garante que a página atualize com os novos dados
+
+
     
     #consultar categorias para exibir no dropdown de edição
     lista_de_categorias = listar_categorias()
@@ -158,6 +180,22 @@ def index():
         
         return redirect(url_for('index'))
     
+    #detalhes do pedido usando a função detalhes_pedido para exibir no modal de detalhes do pedido e response
+    if request.method == 'POST':
+            pedido_id_ajax = request.form.get('pedido_id')
+            
+            if pedido_id_ajax:
+                dados = detalhes_pedido(pedido_id_ajax)
+                
+                # Converte a lista/dicionário para string JSON
+                json_string = json.dumps(dados if dados else [], default=str)
+                
+                # Retorna uma Resposta com o corpo JSON e o tipo de conteúdo correto
+                return Response(
+                    response=json_string,
+                    status=200,
+                    mimetype="application/json"
+                )
     
     # Verificar se as listas estão vazias e renderizar a página com mensagens de erro apropriadas
     

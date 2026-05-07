@@ -133,21 +133,50 @@ def atualizar_produto(code, product_id, name, description, price, category_id, i
     except mysql.connector.Error:
         return False
     
-def status_produto(product_id):
-    """Função para atualizar o status de um produto no banco de dados"""
+def editar_status_produto(product_id, new_status):
     conn = conectar_bd()
-    if not conn:
-        return False
-    
+    if not conn: return False
     try:
         cursor = conn.cursor()
-        cursor.execute("UPDATE products SET status = NOT status WHERE id = %s", (product_id,))
+        # Atualiza diretamente com o valor que o JS enviou
+        cursor.execute("UPDATE products SET status = %s WHERE id = %s", (new_status, product_id))
         conn.commit()
         cursor.close()
         conn.close()
         return True
-    except mysql.connector.Error:
+    except Exception as e:
+        print(f"Erro no banco: {e}")
         return False
+
+def detalhes_pedido(id_pedido):
+    """Função para obter os detalhes de um pedido específico pelo ID"""
+    conn = conectar_bd()
+    if not conn:
+        return None
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT 
+                o.id, 
+                o.status, 
+                o.created_at,
+                u.name AS cliente, 
+                u.email AS email,
+                p.name AS produto
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            JOIN cart_items ci ON o.id = ci.order_id
+            JOIN products p ON ci.product_id = p.id
+            GROUP BY o.id
+        """
+        cursor.execute(query, (id_pedido,))
+        pedido = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return pedido
+    except mysql.connector.Error:
+        return None
     
 def obter_nome_cliente(user_id):
     """Função para obter o nome do cliente pelo ID"""

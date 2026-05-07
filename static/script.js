@@ -116,56 +116,146 @@ btnConfirmar.addEventListener('click', (e) => {
     modal.style.display = 'none';
 });
 
+// botão para alterar status do chá (Ativo/Inativo) utilizando a função editar_status_produto do backend funcionando via delegação de eventos (ver seção 5)
+const btnstatus = document.querySelector('.btn-toggle-status');
+btnstatus.addEventListener('click', () => {
+    const badge = linhaSendoEditada.querySelector('.status');
+});
 
 /* =========================================
    5. AÇÕES NA TABELA (DELEGAÇÃO DE EVENTOS)
    ========================================= */
 // Como usamos delegação, ouvimos os cliques no documento inteiro para as tabelas
-document.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    
-    const linha = btn.closest('tr');
-    if (!linha) return;
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.querySelector('.janela-modal');
+    let linhaSendoEditada = null;
 
-    // Lógica para DESATIVAR / ATIVAR produto
-    if (btn.classList.contains('btn-toggle-status')) {
-        const badge = linha.querySelector('.status');
+    // 1. ESCUTAR CLIQUES NA TABELA (EDITAR E STATUS)
+    document.addEventListener('click', function(event) {
+        const btn = event.target.closest('button');
+        if (!btn) return;
+
+        const linha = btn.closest('tr');
+        if (!linha) return;
+
+        // Ação: EDITAR
+        if (btn.classList.contains('btn-editar')) {
+            linhaSendoEditada = linha;
+            const d = linha.dataset; // Pega os atributos data- do HTML
+
+            // Preenchendo os campos do modal com os dados "escondidos" na TR e da função listar_categorias do backend para preencher o select de categorias
+            document.getElementById('input-id').value = d.productId || '';
+            document.getElementById('input-code').value = d.code || '';
+            document.getElementById('input-nome').value = linha.cells[0].innerText;
+            document.getElementById('input-description').value = d.description || '';
+            
+            
+            // Limpa o "R$" e converte vírgula em ponto para o input number
+            const precoTexto = linha.cells[3].innerText.replace('R$ ', '').replace(',', '.');
+            document.getElementById('input-preco').value = precoTexto;
+            //trazer a lista de categorias do backend pra preencher o select e selecionar a categoria atual do produto
+            const selectCategory = document.getElementById('input-category');
+            const categorias = JSON.parse(document.getElementById('corpo-tabela').dataset.categorias || '[]');
+            selectCategory.innerHTML = '<option value="">Selecione uma categoria</option>';
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.text = cat.name;
+                if (cat.name === d.category) {
+                    option.selected = true;
+                }
+                selectCategory.appendChild(option);
+            });
         
-        // Verifica pelo status atual da tag (Ativo ou Inativo)
-        if (badge.innerText === "Ativo") {
-            badge.innerText = "Inativo";
-            badge.classList.replace('ativo', 'inativo');
-            linha.classList.add('linha-inativa'); 
-            btn.title = "Ativar chá"; 
-        } else {
-            badge.innerText = "Ativo";
-            badge.classList.replace('inativo', 'ativo');
-            linha.classList.remove('linha-inativa'); 
-            btn.title = "Desativar chá"; 
+            document.getElementById('input-image').value = d.image || '';
+            document.getElementById('input-slug').value = d.slug || '';
+            document.getElementById('input-featured').checked = d.featured === '1';
+
+            modal.style.display = 'flex';
         }
-    }
 
-    // Lógica para EDITAR produto
-    if (btn.classList.contains('btn-editar')) {
-        linhaSendoEditada = linha;
-        modalTitulo.innerText = "Editar Chá";
-        
-        // Puxa os dados da tabela para os inputs do modal
-        document.getElementById('input-nome').value = linha.cells[0].innerText;
-        document.getElementById('input-qtd').value = linha.cells[2].innerText;
-        document.getElementById('input-preco').value = linha.cells[3].innerText.replace('R$ ', '').replace(',', '.');
-        
-        modal.style.display = 'flex';
-    }
+        // Ação: ALTERNAR STATUS
+        if (btn.classList.contains('btn-toggle-status')) {
+            const productId = linha.dataset.productId;
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('action', 'toggle_status');
 
-    // Lógica para VER DETALHES do pedido
-    if (btn.classList.contains('btn-detalhes')) {
-        const nomeCliente = linha.cells[0].innerText;
-        mostrarToast(`Abrindo detalhes do pedido de ${nomeCliente}...`, "info");
-    }
+            fetch('/index.html', {
+                method: 'POST',
+                body: formData
+            }).then(() => window.location.reload());
+        }
+    });
+
+    // 2. BOTÃO CONFIRMAR (SALVAR EDIÇÃO)
+    document.getElementById('btn-confirmar').addEventListener('click', function() {
+        const formData = new FormData();
+        
+        formData.append('product_id', document.getElementById('input-id').value);
+        formData.append('code', document.getElementById('input-code').value);
+        formData.append('name', document.getElementById('input-nome').value);
+        formData.append('description', document.getElementById('input-description').value);
+        formData.append('price', document.getElementById('input-preco').value);
+        formData.append('category_id', document.getElementById('input-category').value);
+        formData.append('image', document.getElementById('input-image').value);
+        formData.append('stock', document.getElementById('input-qtd').value);
+        formData.append('slug', document.getElementById('input-slug').value);
+        formData.append('featured', document.getElementById('input-featured').checked ? '1' : '0');
+
+        fetch('/index.html', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Erro ao salvar alterações.");
+            }
+        });
+    });
+
+    // 3. BOTÃO CANCELAR/FECHAR MODAL
+    document.querySelector('.btn-cancelar').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
 });
 
+// AÇÃO: VER DETALHES DO PEDIDO (FETCH PARA O BACKEND) utlizando as funções detalhes_pedido , intens_pedido e listar_categorias do backend para mostrar as informações do pedido e os itens do pedido no modal de detalhes, utilizando delegação de eventos
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('overlay-detalhes');
+
+    // Escuta cliques na tabela
+    document.addEventListener('click', function(event) {
+        const btn = event.target.closest('.btn-detalhes');
+        if (!btn) return;
+
+        const linha = btn.closest('tr');
+        if (!linha) return;
+
+        // Pegando dados do dataset da linha
+        const d = linha.dataset;
+
+        // Preenchendo os campos do modal
+        document.getElementById('detalhes-cliente').value = d.cliente || 'Não informado';
+        document.getElementById('detalhes-email').value = d.email || 'Não informado';
+        document.getElementById('detalhes-status').value = d.status || 'Não informado';
+        document.getElementById('detalhes-data').value = d.data || 'Não informado';
+        document.getElementById('detalhes-produto').value = d.produto || 'Não informado';
+
+        // Mostra o modal
+        if (overlay) overlay.style.display = 'flex';
+    });
+
+    // Fechar o modal
+    const btnFechar = document.getElementById('btn-fechar-detalhes');
+    if (btnFechar) {
+        btnFechar.addEventListener('click', () => {
+            overlay.style.display = 'none';
+        });
+    }
+});
 
 /* =========================================
    6. ACESSIBILIDADE E PREFERÊNCIAS

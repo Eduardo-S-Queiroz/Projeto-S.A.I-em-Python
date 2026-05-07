@@ -348,6 +348,19 @@ tbody td:last-child {
 .info-texto { font-size: 0.8rem; color: var(--cor-texto-mutado); margin-top: 5px; }
 hr { border: 0; border-top: 1px solid var(--cor-borda); margin: 20px 0; }
 
+
+#modal-detalhes-pedido {
+    z-index: 9999; /* Garante que fique na frente de tudo */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+
 /* =========================================
    8. AÇÕES NA TABELA (Botões Minimalistas)
    ========================================= */
