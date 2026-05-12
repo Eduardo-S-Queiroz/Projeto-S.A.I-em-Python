@@ -63,6 +63,7 @@ btnNovoCha.addEventListener('click', () => {
     modalTitulo.innerText = "Cadastrar Novo Chá";
     document.getElementById('form-cha').reset(); // Limpa os campos do formulário
     modal.style.display = 'flex';
+    
 });
 
 // Fechar modal no botão Cancelar
@@ -144,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const d = linha.dataset; // Pega os atributos data- do HTML
 
             // Preenchendo os campos do modal com os dados "escondidos" na TR e da função listar_categorias do backend para preencher o select de categorias
-            document.getElementById('input-id').value = d.productId || '';
+            document.getElementById('input-id').value = d.id || '';
             document.getElementById('input-code').value = d.code || '';
             document.getElementById('input-nome').value = linha.cells[0].innerText;
             document.getElementById('input-description').value = d.description || '';
@@ -166,7 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 selectCategory.appendChild(option);
             });
-        
+            
+            document.getElementById('input-qtd').value = d.stock || '';
             document.getElementById('input-image').value = d.image || '';
             document.getElementById('input-slug').value = d.slug || '';
             document.getElementById('input-featured').checked = d.featured === '1';
@@ -184,7 +186,13 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch('/index.html', {
                 method: 'POST',
                 body: formData
-            }).then(() => window.location.reload());
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    mostrarToast("Erro ao alterar status.", "erro");
+                }
+            });
         }
     });
 
@@ -234,18 +242,99 @@ document.addEventListener('DOMContentLoaded', function() {
         const linha = btn.closest('tr');
         if (!linha) return;
 
-        // Pegando dados do dataset da linha
-        const d = linha.dataset;
+        const pedidoId = linha.dataset.pedidoId;
+        const formData = new FormData();
+        formData.append('pedido_id', pedidoId);
 
-        // Preenchendo os campos do modal
-        document.getElementById('detalhes-cliente').value = d.cliente || 'Não informado';
-        document.getElementById('detalhes-email').value = d.email || 'Não informado';
-        document.getElementById('detalhes-status').value = d.status || 'Não informado';
-        document.getElementById('detalhes-data').value = d.data || 'Não informado';
-        document.getElementById('detalhes-produto').value = d.produto || 'Não informado';
+        fetch('/index.html', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(dados => {
+            console.log("Resposta do Banco:", dados);
+            
+            // Tenta pegar o primeiro item do array se vier como lista, senão usa o objeto
+            const pedidoDoServidor = Array.isArray(dados) && dados.length > 0 ? dados[0] : (dados.id ? dados : null);
 
-        // Mostra o modal
-        if (overlay) overlay.style.display = 'flex';
+            // Função auxiliar para preencher campos com segurança
+            const preencher = (id, valor) => {
+                const campo = document.getElementById(id);
+                if (campo) campo.value = valor || "Não informado";
+            };
+
+            if (pedidoDoServidor) {
+
+                preencher('detalhes-cliente', pedidoDoServidor.cliente || pedidoDoServidor.user_id);
+                preencher('detalhes-email', pedidoDoServidor.email);
+                preencher('detalhes-status', pedidoDoServidor.status);
+                preencher('detalhes-data', pedidoDoServidor.created_at);
+                preencher('detalhes-endereco', pedidoDoServidor.shipping_address);
+                preencher('detalhes-produto', pedidoDoServidor.produto);
+
+                // TRATAMENTO DO PREÇO (Evita campo vazio)
+                const precoBruto = pedidoDoServidor.total_price || 0;
+                // Converte para número puro (ex: "261,00" -> 261.00)
+                const precoNumerico = typeof precoBruto === 'string' 
+                    ? parseFloat(precoBruto.replace(',', '.')) 
+                    : parseFloat(precoBruto);
+                
+                const campoTotal = document.getElementById('detalhes-total_price');
+                if (campoTotal) campoTotal.value = precoNumerico.toFixed(2);
+                
+
+               if (pedidoDoServidor.items) {
+                try {
+                    // Converte se for string, senão usa como objeto
+                    const listaItens = typeof pedidoDoServidor.items === 'string' 
+                        ? JSON.parse(pedidoDoServidor.items) 
+                        : pedidoDoServidor.items;
+
+                    // Se for uma lista, vamos juntar os nomes
+                    if (Array.isArray(listaItens)) {
+                        // Formata como: "Produto A (2), Produto B (1)"
+                                    const textoFormatado = listaItens.map(item => {
+                                        const nome = item.name || item.nome || "Produto";
+                                        const qtd = item.quantity || item.quantidade || 1;
+                                        return `${nome} (${qtd})`;
+                                    }).join(', ');                        
+                        preencher('detalhes-itens', textoFormatado);
+                    } else {
+                        // Se não for array, tenta mostrar o que houver
+                        preencher('detalhes-itens', linha.dataset.itens);                    }
+                } catch (e) {
+                    console.error("Erro no JSON de itens:", e);
+                    preencher('detalhes-itens', 'Erro ao processar lista');
+                }
+            } else {
+                // Caso o backend não envie a chave 'items', tenta o fallback da linha
+                preencher('detalhes-itens', linha.dataset.produto || 'Não informado');
+                preencher('detalhes-itens', linha.dataset.quantity || 'Não informado');
+            }
+            } else {
+                // FALLBACK: Se o banco retornar [], usamos os dados do HTML (data- attributes)
+                console.warn("Banco retornou vazio. Usando dados da linha.");
+                // FALLBACK (Se o banco falhar, usa os atributos data- da linha)
+                preencher('detalhes-cliente', linha.dataset.cliente);
+                preencher('detalhes-email', linha.dataset.email);
+                preencher('detalhes-status', linha.dataset.status);
+                preencher('detalhes-data', linha.dataset.data);
+                preencher('detalhes-produto', linha.dataset.produto);
+                preencher('detalhes-itens', linha.dataset.itens);
+                preencher('detalhes-endereco', linha.dataset.endereco);
+
+                // Ajuste do preço no Fallback
+                const precoLinha = linha.dataset.total_price || "0";
+                const campoTotal = document.getElementById('detalhes-total_price');
+                if (campoTotal) campoTotal.value = parseFloat(precoLinha.replace(',', '.')).toFixed(2);
+            }
+
+            if (overlay) overlay.style.display = 'flex';
+        })
+        .catch(error => {
+            console.error('Erro ao buscar detalhes:', error);
+            mostrarToast("Erro ao carregar detalhes do pedido.", "erro");
+        });
     });
 
     // Fechar o modal
@@ -335,11 +424,11 @@ document.getElementById('btn-ajuda').addEventListener('click', () => {
 });
 
 // Botão Voltar para login - COM TOAST 
-document.getElementById('btn-voltar-login').addEventListener('click', () => {
+document.getElementById('btn-voltar').addEventListener('click', () => {
     mostrarToast("Fazendo log-off... Redirecionando.", "info");
     setTimeout(() => { 
         window.location.href = "login.html";
-    }, 1500);
+    }, 2000);
 });
 
 /* =========================================

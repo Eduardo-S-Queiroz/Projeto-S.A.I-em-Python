@@ -10,7 +10,7 @@ from flask import Flask, render_template, request, redirect, url_for, Response
 # Adicionar o diretório atual ao sys.path para garantir que o módulo api seja encontrado
 sys.path.insert(0, os.path.dirname(__file__))
 
-from api import ( listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
+from api import ( conectar_bd, listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
 cadastrar_produto, editar_status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email, detalhes_pedido )
 
 from dashboard import get_data_from_db
@@ -68,47 +68,112 @@ def index():
         if 'category_id' in produto:
            produto['category'] = obter_nome_categoria(produto['category_id'])
 
-    # Converter os itens dos pedidos para exibir o nome do produto e calcular o preço total
+   # Converter os itens dos pedidos para exibir o nome do produto e calcular o preço total
     for pedido in lista_de_pedidos:
         pedido['cliente'] = ''
         pedido['produto'] = ''
-        pedido['price'] = ''
+        pedido['price'] = 0.0 # Inicializa como número para evitar erros de soma
+        pedido['exibir_itens'] = '' # Nova chave para o campo "itens" do modal
 
         if pedido.get('user_id') is not None:
             pedido['cliente'] = obter_nome_cliente(pedido['user_id'])
             pedido['email'] = obter_email(pedido['user_id'])
 
-        itens_json = pedido.get('items') or pedido.get('itens')
-        if itens_json:
+        # Tenta buscar os dados brutos (evitamos usar apenas .items para não colidir com o método)
+        raw_itens = pedido.get('items') or pedido.get('itens')
+        
+        if raw_itens:
             try:
-                if isinstance(itens_json, (bytes, bytearray)):
-                    itens_json = itens_json.decode('utf-8')
+                # Decodificação e carregamento do JSON
+                if isinstance(raw_itens, (bytes, bytearray)):
+                    raw_itens = raw_itens.decode('utf-8')
 
-                if isinstance(itens_json, str):
-                    itens = json.loads(itens_json)
+                dados_itens = json.loads(raw_itens) if isinstance(raw_itens, str) else raw_itens
+
+                # Normaliza para lista
+                if isinstance(dados_itens, dict):
+                    dados_itens = [dados_itens]
+
+                if isinstance(dados_itens, list):
+                    # 1. Cria a lista formatada com Nome + Quantidade
+                    lista_formatada = []
+                    nomes_simples = []
+                    
+                    for i in dados_itens:
+                        if isinstance(i, dict):
+                            nome = str(i.get('name') or i.get('nome') or 'Produto')
+                            qtd = str(i.get('quantity') or i.get('quantidade') or '1')
+                            
+                            nomes_simples.append(nome)
+                            lista_formatada.append(f"{nome} ({qtd})")
+                    
+                    # 2. Na coluna 'produto' (tabela), deixamos apenas os nomes
+                    pedido['produto'] = ", ".join(nomes_simples)
+                    
+                    # 3. Na chave 'exibir_itens' (modal), incluímos as quantidades
+                    # Isso resolverá o problema visto na image_91099c.png
+                    pedido['exibir_itens'] = ", ".join(lista_formatada)
+
+                    # Cálculo do preço (seu código original continua igual aqui)
+                    total = 0
+                    for i in dados_itens:
+                        if isinstance(i, dict):
+                            qnt = float(i.get('quantity') or i.get('quantidade') or 0)
+                            prc = float(i.get('price') or i.get('preco') or 0)
+                            total += (qnt * prc)
+                    pedido['price'] = total
                 else:
-                    itens = itens_json
-
-                if isinstance(itens, dict):
-                    itens = [itens]
-
-                if isinstance(itens, list):
-                    pedido['produto'] = ", ".join(
-                        str(item.get('name') or item.get('nome') or '') for item in itens if isinstance(item, dict)
-                    )
-                    pedido['price'] = sum(
-                        float(item.get('quantity') or item.get('quantidade') or 0) * float(item.get('price') or item.get('preco') or 0) for item in itens if isinstance(item, dict)
-                    )
-                else:
-                    pedido['produto'] = str(itens)
-                    pedido['price'] = ''
-            except Exception:
-                pedido['produto'] = str(itens_json)
-                pedido['price'] = ''
-                
-    # Verificar se é uma requisição POST para atualizar um produto ou status
+                    pedido['produto'] = str(dados_itens)
+                    pedido['exibir_itens'] = str(dados_itens)
+            except Exception as e:
+                print(f"Erro ao processar pedido {pedido.get('id')}: {e}")
+                pedido['produto'] = "Erro nos itens"
+                pedido['exibir_itens'] = "Erro ao processar dados"
+                    
+    # Verificar se é uma requisição POST
     if request.method == 'POST':
-        # Verificar se é uma atualização de produto
+        # 1. Ação: Alternar Status (AJAX)
+        if request.form.get('action') == 'toggle_status':
+            product_id = request.form.get('product_id')
+            # Busca o produto para saber o status atual e inverter
+            produto = consultar_produto(product_id) # Nota: consultar_produto usa 'code', mas aqui precisamos por ID. 
+            
+            
+            # Verificando como o JS envia: ele envia 'product_id' e 'action'.
+            
+            conn = conectar_bd()
+            cursor = conn.cursor()
+            cursor.execute("SELECT status FROM products WHERE id = %s", (product_id,))
+            res = cursor.fetchone()
+            if res:
+                novo_status = 0 if res[0] else 1
+                editar_status_produto(product_id, novo_status)
+            cursor.close()
+            conn.close()
+            from flask import jsonify
+            return jsonify({"success": True})
+
+        # 2. Ação: Detalhes do Pedido (AJAX)
+        pedido_id_ajax = request.form.get('pedido_id')
+        if pedido_id_ajax:
+            dados = detalhes_pedido(pedido_id_ajax)
+            return Response(response=json.dumps(dados if dados else [], default=str), status=200, mimetype="application/json")
+
+        # 3. Ação: Cadastrar Novo Produto
+        if 'new_product' in request.form or 'new_code' in request.form:
+            code = request.form.get('new_code')
+            name = request.form.get('new_name')
+            description = request.form.get('new_description')
+            price = request.form.get('new_price')
+            category_id = request.form.get('new_category_id')
+            image = request.form.get('new_image')
+            stock = request.form.get('new_stock')
+            slug = request.form.get('new_slug')
+            featured = 1 if 'new_featured' in request.form else 0
+            cadastrar_produto(code, name, description, price, category_id, image, stock, slug, featured)
+            return redirect(url_for('index'))
+
+        # 4. Ação: Atualizar Produto Existente
         if 'product_id' in request.form:
             product_id = request.form['product_id']
             code = request.form['code']
@@ -120,35 +185,8 @@ def index():
             stock = request.form['stock']
             slug = request.form['slug']
             featured = 1 if 'featured' in request.form else 0
-            
             atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
-        
-    # Verificar se é uma atualização de status e chamar a função editar_status_produto do backend
-    # Trecho do seu main.py corrigido
-    if 'status_product_id' in request.form:
-        status_product_id = request.form['status_product_id']
-        new_status = int(request.form['new_status']) 
-        
-        # Agora a função aceita os dois parâmetros!
-        sucesso = editar_status_produto(status_product_id, new_status)
-        
-        from flask import jsonify
-        return jsonify({"success": sucesso})
-    if 'product_id' in request.form:
-        product_id = request.form['product_id']
-        code = request.form['code']
-        name = request.form['name']
-        description = request.form['description']
-        price = request.form['price']
-        category_id = request.form['category_id']
-        image = request.form['image']
-        stock = request.form['stock']
-        slug = request.form['slug']
-        featured = 1 if 'featured' in request.form else 0
-
-        atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
-        
-        return redirect(url_for('index')) # Isso garante que a página atualize com os novos dados
+            return redirect(url_for('index'))
 
 
     
@@ -164,38 +202,7 @@ def index():
         else:
             produto['details'] = {}
             
-    #ultilizando a função cadastrar_produto para cadastrar um novo produto caso os campos de cadastro sejam preenchidos
-    if request.method == 'POST' and 'new_product' in request.form:
-        code = request.form['new_code']
-        name = request.form['new_name']
-        description = request.form['new_description']
-        price = request.form['new_price']
-        category_id = request.form['new_category_id']
-        image = request.form['new_image']
-        stock = request.form['new_stock']
-        slug = request.form['new_slug']
-        featured = 1 if 'new_featured' in request.form else 0
-        
-        cadastrar_produto(code, name, description, price, category_id, image, stock, slug, featured)
-        
-        return redirect(url_for('index'))
-    
-    #detalhes do pedido usando a função detalhes_pedido para exibir no modal de detalhes do pedido e response
-    if request.method == 'POST':
-            pedido_id_ajax = request.form.get('pedido_id')
-            
-            if pedido_id_ajax:
-                dados = detalhes_pedido(pedido_id_ajax)
-                
-                # Converte a lista/dicionário para string JSON
-                json_string = json.dumps(dados if dados else [], default=str)
-                
-                # Retorna uma Resposta com o corpo JSON e o tipo de conteúdo correto
-                return Response(
-                    response=json_string,
-                    status=200,
-                    mimetype="application/json"
-                )
+
     
     # Verificar se as listas estão vazias e renderizar a página com mensagens de erro apropriadas
     
@@ -206,9 +213,14 @@ def index():
         return render_template('index.html', produtos=lista_de_produtos, pedidos=[], error="Nenhum pedido encontrado.")
     if lista_de_categorias is None:
         return render_template('index.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, error="Erro ao carregar categorias.")
-
     
-    return render_template('index.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,)
+    # BUSCA NOTIFICAÇÕES (Exemplo: produtos com estoque baixo)
+    notificacoes = [f"📦 Estoque baixo: {p['name']}" for p in lista_de_produtos if p['stock'] < 5]
+    
+    
+    
+    
+    return render_template('index.html', notificacoes=notificacoes, produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,)
 
 @app.route("/dashboard", methods=['GET'])
 @app.route("/dashboard.html", methods=['GET'])
@@ -328,12 +340,12 @@ def dashboard():
         top_5_df = df_products.groupby('name')['stock'].sum().nlargest(5).reset_index()
     
         # 2. Criar o gráfico de barras horizontais
-        top_products_chart = px.line(
+        top_products_chart = px.bar(
             top_5_df,
             x='stock',
             y='name',
             orientation='h', # Define como horizontal
-            title='Top 5 Produtos Mais Vendidos',
+            title='Top 5 Produtos com Maior Estoque',
             text='stock', # Exibe o valor sobre a barra
             labels={'stock': 'Estoque', 'name': 'Produto'},
             template='plotly_white',

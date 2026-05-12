@@ -54,18 +54,29 @@
                 
                 <div class="icone-wrapper" id="btn-notificacao">
                     <i class="ph ph-bell"></i>
-                    <span class="bolinha-aviso"></span>
+                    <!-- Só mostra a bolinha se houver notificações -->
+                    {% if notificacoes %}
+                        <span class="bolinha-aviso">{{ notificacoes|length }}</span>
+                    {% endif %}
+
                     <div class="caixa-dropdown" id="drop-notificacao">
                         <h4>Notificações Recentes</h4>
-                        <p>🛒 Novo pedido: João Silva</p>
-                        <p>📦 Estoque baixo: Chá Verde Detox</p>
+                        {% for msg in notificacoes %}
+                            <p>{{ msg }}</p>
+                        {% else %}
+                            <p>Tudo em dia! ✅</p>
+                        {% endfor %}
                     </div>
                 </div>
+
 
                 <div class="icone-wrapper" id="btn-perfil">
                     <i class="ph ph-coffee"></i>
                     <div class="caixa-dropdown" id="drop-perfil">
-                        <button id="btn-voltar-login" class="ph-ph-sign-out2"><i class="ph-ph-sign-out"></i> 【➜  Voltar para o login</button>
+                        <!-- Removi o excesso de classes no ID e corrigi a classe do ícone -->
+                        <button id="btn-voltar" class="ph-ph-sign-out2">
+                            <i class="ph ph-sign-out"></i> Voltar para o login
+                        </button>
                     </div>
                 </div>
             </div>
@@ -106,12 +117,17 @@
                             {% if produtos and produtos|length > 0 %}
                                 {% for produto in produtos %}
                                     <tr data-product-id="{{ produto.id }}" 
+                                        data-id="{{ produto.id }}"
                                         data-code="{{ produto.code }}" 
                                         data-description="{{ produto.description }}"
                                         data-category="{{ produto.category_id }}"
                                         data-image="{{ produto.image }}"
                                         data-slug="{{ produto.slug }}"
-                                        data-featured="{{ produto.featured }}">
+                                        data-featured="{{ produto.featured }}"
+                                        data-name="{{ produto.name }}"
+                                        data-stock="{{ produto.stock }}"
+                                        data-price="{{ produto.price }}"
+                                        data-status="{{ produto.status }}">
 
                                         <td>{{ produto.name if produto.name is defined else produto['name'] }}</td>
                                         <td><span class="status {{ 'ativo' if produto['status'] == 'ativo' else 'inativo' }}">{{ produto['status'] }}</span></td>
@@ -170,15 +186,20 @@
                         <tbody id="corpo-tabela-pedidos">
                             {% for pedido in pedidos %}
                             <tr class="linha-pedido" 
-                                data-cliente="{{ pedido.client}}" 
+                                data-pedido-id="{{ pedido.id }}"
+                                data-cliente="{{ pedido.cliente }}" 
                                 data-email="{{ pedido.email }}"
                                 data-status="{{ pedido.status }}"
                                 data-data="{{ pedido.created_at }}"
-                                data-produto="{{ pedido.product}}">
+                                data-endereco="{{ pedido.shipping_address }}"
+                                data-produto="{{ pedido.produto }}"
+                                data-itens="{{ pedido.exibir_itens }}"
+                                data-total_price="{{ pedido.total_price }}"
+                                >
                                 
-                                <td>{{ pedido.client_name }}</td>
+                                <td>{{ pedido.cliente }}</td>
                                 <td>{{ pedido.email }}</td>
-                                <td>{{ pedido.product_name }}</td>
+                                <td>{{ pedido.produto }}</td>
                                 <td>
                                     <span class="status-badge status-{{ pedido.status }}">
                                         {{ pedido.status }}
@@ -231,7 +252,11 @@
         <div class="modal-conteudo">
             <h2 id="modal-titulo">Editar Chá</h2>
             <form id="form-cha">
-                <input type="hidden" id="input-id"> <div class="campo-modal">
+                <div class="campo-modal">
+                    <label>ID:</label>
+                    <input type="number" id="input-id" disabled>
+                </div>
+                <div class="campo-modal">
                     <label>Código:</label>
                     <input type="text" id="input-code">
                 </div>
@@ -299,8 +324,20 @@
                     <input type="text" id="detalhes-produto" disabled>
                 </div>
                 <div class="campo-modal">
+                    <label>itens:</label>
+                    <textarea id="detalhes-itens" disabled></textarea>
+                </div>
+                <div class="campo-modal">
+                    <label>total (R$):</label>
+                    <input type="number" id="detalhes-total_price" disabled step="0.01">
+                 </div>
+                <div class="campo-modal">
                     <label>Status:</label>
                     <input type="text" id="detalhes-status" disabled>
+                </div>
+                <div class="campo-modal">
+                    <label>Endereço de Entrega:</label>
+                    <textarea id="detalhes-endereco" disabled></textarea>
                 </div>
                 <div class="campo-modal">
                     <label>Data do Pedido:</label>
@@ -314,5 +351,6 @@
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+ <div id="toast-container"></div>
 </body>
 </html>

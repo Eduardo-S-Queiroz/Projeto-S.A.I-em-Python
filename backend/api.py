@@ -96,15 +96,15 @@ def listar_categorias():
     except mysql.connector.Error:
         return []
 
-def consultar_produto(code):
-    """Função para consultar um produto específico pelo codigo"""
+def consultar_produto(product_id):
+    """Função para consultar um produto específico pelo ID"""
     conn = conectar_bd()
     if not conn:
         return None
     
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM products WHERE code = %s", (code,))
+        cursor.execute("SELECT * FROM products WHERE id = %s", (product_id,))
         produto = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -112,7 +112,7 @@ def consultar_produto(code):
     except mysql.connector.Error:
         return None
 
-def atualizar_produto(code, product_id, name, description, price, category_id, image, stock, slug, featured): 
+def atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured): 
     """Função para atualizar um produto existente no banco de dados"""
     conn = conectar_bd()
     if not conn:
@@ -163,11 +163,12 @@ def detalhes_pedido(id_pedido):
                 o.created_at,
                 u.name AS cliente, 
                 u.email AS email,
-                p.name AS produto
+                GROUP_CONCAT(p.name SEPARATOR ', ') AS produto
             FROM orders o
             JOIN users u ON o.user_id = u.id
             JOIN cart_items ci ON o.id = ci.order_id
             JOIN products p ON ci.product_id = p.id
+            WHERE o.id = %s
             GROUP BY o.id
         """
         cursor.execute(query, (id_pedido,))
