@@ -1,6 +1,6 @@
 import pandas as pd
 from mysql.connector import Error
-from api import conectar_bd
+from acts import conectar_bd
 
 def get_data_from_db():
     try:

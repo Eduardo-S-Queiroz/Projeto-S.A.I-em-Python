@@ -7,13 +7,14 @@ import calendar
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, Response
 
-# Adicionar o diretório atual ao sys.path para garantir que o módulo api seja encontrado
+# Adicionar o diretório atual ao sys.path para garantir que o módulo acts seja encontrado
 sys.path.insert(0, os.path.dirname(__file__))
 
-from api import ( conectar_bd, listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
+from acts import ( conectar_bd, listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
 cadastrar_produto, editar_status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email, detalhes_pedido )
 
 from dashboard import get_data_from_db
+
 
 # 1. Define o caminho base (onde o seu main.py está)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
