@@ -62,6 +62,28 @@ btnNovoCha.addEventListener('click', () => {
     linhaSendoEditada = null; // Garante que estamos criando um novo, não editando
     modalTitulo.innerText = "Cadastrar Novo Chá";
     document.getElementById('form-cha').reset(); // Limpa os campos do formulário
+    // remove o campo ID para evitar confusão (já que é auto-incremento no banco)
+    document.getElementById('input-id').remove();
+    // remover codigo do produto para evitar confusão com a função de edição
+    document.getElementById('input-code').remove();
+    
+    const selectCategory = document.getElementById('input-category');
+    const corpoTabela = document.getElementById('corpo-tabela');
+    
+    // Tenta obter as categorias do dataset no HTML
+    const dados = corpoTabela.dataset.categorias;
+    if (dados) {
+        const categorias = JSON.parse(dados);
+        selectCategory.innerHTML = '<option value="">Selecione uma categoria</option>';
+        
+        categorias.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.text = cat.name;
+            selectCategory.appendChild(option);
+        });
+    }
+
     modal.style.display = 'flex';
     
 });
@@ -72,49 +94,31 @@ botaoCancelar.addEventListener('click', () => {
 });
 
 // Confirmar (Salvar Novo ou Salvar Edição)
-btnConfirmar.addEventListener('click', (e) => {
-    e.preventDefault(); // Evita que a página recarregue
-    
-    const nome = document.getElementById('input-nome').value;
-    const qtd = document.getElementById('input-qtd').value;
-    const preco = document.getElementById('input-preco').value;
+btnConfirmar.addEventListener('click', async (e) => {
+    e.preventDefault();
 
-    // VALIDAÇÃO COM TOAST
-    if (!nome || !qtd || !preco) {
-        mostrarToast("Preencha todos os campos do formulário!", "erro");
-        return;
+    const form = document.getElementById('form-cha');
+    const formData = new FormData(form);
+
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
     }
 
-    if (linhaSendoEditada) {
-        // MODO EDIÇÃO: Atualiza os dados na linha existente
-        linhaSendoEditada.cells[0].innerText = nome;
-        linhaSendoEditada.cells[2].innerText = qtd;
-        linhaSendoEditada.cells[3].innerText = `R$ ${parseFloat(preco).toFixed(2)}`;
-    } else {
-        // MODO NOVO: Cria uma nova linha na tabela
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${nome}</td>
-            <td><span class="status ativo">Ativo</span></td>
-            <td>${qtd}</td>
-            <td>R$ ${parseFloat(preco).toFixed(2)}</td>
-            <td>
-                <button class="btn-acao btn-editar" title="Editar chá">
-                    <i class="ph ph-pencil-simple"></i>
-                </button>
-                <button class="btn-acao btn-toggle-status" title="Desativar chá">
-                    <i class="ph ph-power"></i>
-                </button>
-            </td>
-        `;
-        corpoTabela.appendChild(tr);
-    }
-    
-    // SUCESSO COM TOAST
-    mostrarToast("Chá salvo com sucesso!", "sucesso");
+    const response = await fetch('/index.html', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
 
-    // Fecha o modal após salvar
-    modal.style.display = 'none';
+    const text = await response.text();
+    try {
+        const data = JSON.parse(text);
+        if (data.success) {
+            location.reload();
+        }
+    } catch (err) {
+        console.error("O servidor não retornou JSON, retornou isto:", text);
+    }
 });
 
 // botão para alterar status do chá (Ativo/Inativo) utilizando a função editar_status_produto do backend funcionando via delegação de eventos (ver seção 5)
@@ -142,27 +146,33 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ação: EDITAR
         if (btn.classList.contains('btn-editar')) {
             linhaSendoEditada = linha;
-            const d = linha.dataset; // Pega os atributos data- do HTML
-
-            // Preenchendo os campos do modal com os dados "escondidos" na TR e da função listar_categorias do backend para preencher o select de categorias
+            const d = linha.dataset;
+            
+            // Preencher inputs básicos
             document.getElementById('input-id').value = d.id || '';
             document.getElementById('input-code').value = d.code || '';
             document.getElementById('input-nome').value = linha.cells[0].innerText;
             document.getElementById('input-description').value = d.description || '';
             
-            
-            // Limpa o "R$" e converte vírgula em ponto para o input number
             const precoTexto = linha.cells[3].innerText.replace('R$ ', '').replace(',', '.');
             document.getElementById('input-preco').value = precoTexto;
-            //trazer a lista de categorias do backend pra preencher o select e selecionar a categoria atual do produto
+
+            // Preencher Select de Categorias com segurança
+            const corpoTabela = document.getElementById('corpo-tabela');
+            const categorias = JSON.parse(corpoTabela.dataset.categorias || '[]');
+
             const selectCategory = document.getElementById('input-category');
-            const categorias = JSON.parse(document.getElementById('corpo-tabela').dataset.categorias || '[]');
             selectCategory.innerHTML = '<option value="">Selecione uma categoria</option>';
+            
+            const catIdDoProduto = d.category; // Usamos o dataset que já temos
+
             categorias.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat.id;
                 option.text = cat.name;
-                if (cat.name === d.category) {
+                
+                // Compara IDs (convertendo para String para garantir igualdade)
+                if (String(cat.id) === String(catIdDoProduto)) {
                     option.selected = true;
                 }
                 selectCategory.appendChild(option);
@@ -198,30 +208,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 2. BOTÃO CONFIRMAR (SALVAR EDIÇÃO)
     document.getElementById('btn-confirmar').addEventListener('click', function() {
-        const formData = new FormData();
-        
-        formData.append('product_id', document.getElementById('input-id').value);
-        formData.append('code', document.getElementById('input-code').value);
-        formData.append('name', document.getElementById('input-nome').value);
-        formData.append('description', document.getElementById('input-description').value);
-        formData.append('price', document.getElementById('input-preco').value);
-        formData.append('category_id', document.getElementById('input-category').value);
-        formData.append('image', document.getElementById('input-image').value);
-        formData.append('stock', document.getElementById('input-qtd').value);
-        formData.append('slug', document.getElementById('input-slug').value);
-        formData.append('featured', document.getElementById('input-featured').checked ? '1' : '0');
+        const form = document.getElementById('form-cha');
+        const formData = new FormData(form);
+
+        // Adiciona o flag para o backend saber que é uma edição
+        formData.append('action', 'update_product');
 
         fetch('/index.html', {
             method: 'POST',
             body: formData
         })
-        .then(response => {
-            if (response.ok) {
-                window.location.reload();
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+               
+                location.reload(); // Recarrega para ver as mudanças
             } else {
-                alert("Erro ao salvar alterações.");
+                alert('Erro ao atualizar produto.');
             }
-        });
+        })
+        .catch(error => console.error('Erro:', error));
     });
 
     // 3. BOTÃO CANCELAR/FECHAR MODAL
@@ -252,7 +258,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(dados => {
-            console.log("Resposta do Banco:", dados);
             
             // Tenta pegar o primeiro item do array se vier como lista, senão usa o objeto
             const pedidoDoServidor = Array.isArray(dados) && dados.length > 0 ? dados[0] : (dados.id ? dados : null);
@@ -313,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             } else {
                 // FALLBACK: Se o banco retornar [], usamos os dados do HTML (data- attributes)
-                console.warn("Banco retornou vazio. Usando dados da linha.");
                 // FALLBACK (Se o banco falhar, usa os atributos data- da linha)
                 preencher('detalhes-cliente', linha.dataset.cliente);
                 preencher('detalhes-email', linha.dataset.email);

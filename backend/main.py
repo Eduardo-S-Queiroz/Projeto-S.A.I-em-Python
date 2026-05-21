@@ -5,8 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import calendar
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, Response
-
+from flask import Flask, render_template,jsonify, request, redirect, url_for, Response
 # Adicionar o diretório atual ao sys.path para garantir que o módulo acts seja encontrado
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -151,7 +150,7 @@ def index():
                 editar_status_produto(product_id, novo_status)
             cursor.close()
             conn.close()
-            from flask import jsonify
+            
             return jsonify({"success": True})
 
         # 2. Ação: Detalhes do Pedido (AJAX)
@@ -175,19 +174,27 @@ def index():
             return redirect(url_for('index'))
 
         # 4. Ação: Atualizar Produto Existente
-        if 'product_id' in request.form:
-            product_id = request.form['product_id']
-            code = request.form['code']
-            name = request.form['name']
-            description = request.form['description']
-            price = request.form['price']
-            category_id = request.form['category_id']
-            image = request.form['image']
-            stock = request.form['stock']
-            slug = request.form['slug']
-            featured = 1 if 'featured' in request.form else 0
-            atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
-            return redirect(url_for('index'))
+        if 'edit_product_id' in request.form:
+            product_id = request.form.get('edit_product_id')
+            code = request.form.get('edit_code')
+            name = request.form.get('edit_name')
+            description = request.form.get('edit_description')
+            price = request.form.get('edit_price')
+            
+            
+            raw_category = request.form.get('edit_category_id')
+            category_id = int(raw_category) if raw_category and raw_category.strip() != "" else None
+            
+            
+            image = request.form.get('edit_image')
+            stock = request.form.get('edit_stock')
+            slug = request.form.get('edit_slug')
+            featured = 1 if 'edit_featured' in request.form else 0
+            
+            sucesso = atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
+            
+            return jsonify({"success": sucesso})
+    
 
 
     
@@ -218,14 +225,13 @@ def index():
     # BUSCA NOTIFICAÇÕES (Exemplo: produtos com estoque baixo)
     notificacoes = [f"📦 Estoque baixo: {p['name']}" for p in lista_de_produtos if p['stock'] < 5]
     
+    return render_template('index.html', notificacoes=notificacoes, produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias )
     
-    
-    
-    return render_template('index.html', notificacoes=notificacoes, produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,)
 
-@app.route("/dashboard", methods=['GET'])
 @app.route("/dashboard.html", methods=['GET'])
 def dashboard():
+
+
     df_orders, df_products = get_data_from_db()
 
     # Criar gráficos usando Plotly
@@ -370,7 +376,8 @@ def dashboard():
     )
     
     # Renderizar o template do dashboard com os gráficos
-    return render_template('dashboard.html', top_products_chart=top_products_chart.to_html(full_html=False), status_chart=status_chart.to_html(full_html=False), fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
+    return render_template('index.html', notificacoes=notificacoes, produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,
+     top_products_chart=top_products_chart.to_html(full_html=False), status_chart=status_chart.to_html(full_html=False), fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
 
 
 

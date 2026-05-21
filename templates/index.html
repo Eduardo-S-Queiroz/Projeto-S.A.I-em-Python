@@ -19,19 +19,16 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-
+<body>    
     <div class="container-geral">
-        
         <aside class="menu-lateral">
             <div class="logo-area">
                 <i class="ph ph-leaf"></i> <h2>Chá Admin</h2>
             </div>
+            
             <nav>
+                <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
                 <ul>
-                    <div>
-                        <button><a href="/dashboard">Acessar Dashboard</a></button>
-                    </div>
                     <li class="item-menu ativo" data-tela="tela-estoque">
                         <i class="ph ph-package"></i> Gerenciamento
                     </li>
@@ -73,7 +70,7 @@
                 <div class="icone-wrapper" id="btn-perfil">
                     <i class="ph ph-coffee"></i>
                     <div class="caixa-dropdown" id="drop-perfil">
-                        <!-- Removi o excesso de classes no ID e corrigi a classe do ícone -->
+                        
                         <button id="btn-voltar" class="ph-ph-sign-out2">
                             <i class="ph ph-sign-out"></i> Voltar para o login
                         </button>
@@ -247,6 +244,36 @@
         </main>
     </div>
 
+    <div id="tela-dashboard" class="tela-secao" style="display: none;">
+        <header class="topo-painel">
+            <div>
+                <h1>Dashboard de Vendas</h1>
+                <p>Análise visual do desempenho da loja.</p>
+            </div>
+        </header>
+
+        <section class="secao-card">
+            <div class="dashboard-graficos" style="display: flex; flex-wrap: wrap; gap: 20px;">
+               <div class="dashboard-grid">
+                    <div class="chart-card">
+                        {{ fig_sales | safe }}
+                    </div>
+
+                    <div class="chart-card">
+                        {{ fig_category | safe }}
+                    </div>
+
+                    <div class="chart-card">
+                            {{ status_chart | safe }}
+                    </div>
+                    <div class="chart-card">
+                        {{ top_products_chart | safe }}
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
     <div class="janela-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
     
         <div class="modal-conteudo">
@@ -254,47 +281,47 @@
             <form id="form-cha">
                 <div class="campo-modal">
                     <label>ID:</label>
-                    <input type="number" id="input-id" disabled>
+                    <input type="number" name="edit_product_id" id="input-id" >
                 </div>
                 <div class="campo-modal">
                     <label>Código:</label>
-                    <input type="text" id="input-code">
+                    <input type="text" name="edit_code" id="input-code">
                 </div>
                 <div class="campo-modal">
                     <label>Nome do Chá:</label>
-                    <input type="text" id="input-nome">
+                    <input type="text" name="edit_name" id="input-nome">
                 </div>
                 <div class="campo-modal">
                     <label>Descrição:</label>
-                    <textarea id="input-description" rows="3"></textarea>
+                    <textarea name="edit_description" id="input-description" rows="3"></textarea>
                 </div>
                 <div class="campo-modal-grupo" style="display: flex; gap: 10px;">
                     <div class="campo-modal">
                         <label>Preço (R$):</label>
-                        <input type="number" id="input-preco" step="0.01">
+                        <input type="number" name="edit_price" id="input-preco" step="0.01">
                     </div>
                     <div class="campo-modal">
                         <label>Quantidade:</label>
-                        <input type="number" id="input-qtd">
+                        <input type="number" name="edit_stock" id="input-qtd">
                     </div>
                 </div>
                 <div class="campo-modal">
                     <label>Categoria:</label>
-                    <select id="input-category">
+                    <select name="edit_category_id" id="input-category">
                         <option value="">Selecione uma categoria</option>
                     </select>
                 </div>
                 <div class="campo-modal">
                     <label>URL da Imagem:</label>
-                    <input type="text" id="input-image">
+                    <input type="text" name="edit_image" id="input-image">
                 </div>
                 <div class="campo-modal">
                     <label>Slug (URL amigável):</label>
-                    <input type="text" id="input-slug">
+                    <input type="text" name="edit_slug" id="input-slug">
                 </div>
                 <div class="campo-modal">
                     <label>
-                        <input type="checkbox" id="input-featured"> Produto em Destaque
+                        <input type="checkbox" name="edit_featured" id="input-featured"> Produto em Destaque
                     </label>
                 </div>
 
@@ -317,31 +344,31 @@
                 </div>
                 <div class="campo-modal">
                     <label>Email:</label>
-                    <input type="text" id="detalhes-email" disabled>
+                    <input type="text" name="edit_email" id="detalhes-email" disabled>
                 </div>
                 <div class="campo-modal">
                     <label>Produto:</label>
-                    <input type="text" id="detalhes-produto" disabled>
+                    <input type="text" name="edit_product" id="detalhes-produto" disabled>
                 </div>
                 <div class="campo-modal">
                     <label>itens:</label>
-                    <textarea id="detalhes-itens" disabled></textarea>
+                    <textarea name="edit_itens" id="detalhes-itens" disabled></textarea>
                 </div>
                 <div class="campo-modal">
                     <label>total (R$):</label>
-                    <input type="number" id="detalhes-total_price" disabled step="0.01">
+                    <input type="number" name="edit_total_price" id="detalhes-total_price" disabled step="0.01">
                  </div>
                 <div class="campo-modal">
                     <label>Status:</label>
-                    <input type="text" id="detalhes-status" disabled>
+                    <input type="text" name="edit_status" id="detalhes-status" disabled>
                 </div>
                 <div class="campo-modal">
                     <label>Endereço de Entrega:</label>
-                    <textarea id="detalhes-endereco" disabled></textarea>
+                    <textarea name="edit_shipping_address" id="detalhes-endereco" disabled></textarea>
                 </div>
                 <div class="campo-modal">
                     <label>Data do Pedido:</label>
-                    <input type="text" id="detalhes-data" disabled>
+                    <input type="text" name="edit_created_at" id="detalhes-data" disabled>
                 </div>
             </form>
             <div class="modal-botoes">
