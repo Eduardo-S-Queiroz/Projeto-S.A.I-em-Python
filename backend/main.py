@@ -376,7 +376,7 @@ def dashboard():
     )
     
     # Renderizar o template do dashboard com os gráficos
-    return render_template('index.html', notificacoes=notificacoes, produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,
+    return render_template('dashboard.html', 
      top_products_chart=top_products_chart.to_html(full_html=False), status_chart=status_chart.to_html(full_html=False), fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
 
 

@@ -62,10 +62,40 @@ btnNovoCha.addEventListener('click', () => {
     linhaSendoEditada = null; // Garante que estamos criando um novo, não editando
     modalTitulo.innerText = "Cadastrar Novo Chá";
     document.getElementById('form-cha').reset(); // Limpa os campos do formulário
-    // remove o campo ID para evitar confusão (já que é auto-incremento no banco)
-    document.getElementById('input-id').remove();
-    // remover codigo do produto para evitar confusão com a função de edição
-    document.getElementById('input-code').remove();
+    // Ajusta os nomes dos campos para o padrão de "novo" esperado pelo backend
+    const mapNewNames = {
+        'input-id': 'new_product',
+        'input-code': 'new_code',
+        'input-nome': 'new_name',
+        'input-description': 'new_description',
+        'input-preco': 'new_price',
+        'input-qtd': 'new_stock',
+        'input-category': 'new_category_id',
+        'input-image': 'new_image',
+        'input-slug': 'new_slug',
+        'input-featured': 'new_featured'
+    };
+
+    Object.keys(mapNewNames).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        // Para o campo ID usamos um hidden flag; não enviamos um id numérico
+        if (id === 'input-id') {
+            el.value = '';
+            // cria um campo hidden 'new_product' apenas quando for novo
+            if (!document.querySelector('input[name="new_product"]')) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'new_product';
+                hidden.value = '1';
+                hidden.id = 'hidden-new-product-flag';
+                document.getElementById('form-cha').appendChild(hidden);
+            }
+            return;
+        }
+
+        el.name = mapNewNames[id];
+    });
     
     const selectCategory = document.getElementById('input-category');
     const corpoTabela = document.getElementById('corpo-tabela');
@@ -93,33 +123,8 @@ botaoCancelar.addEventListener('click', () => {
     modal.style.display = 'none';
 });
 
-// Confirmar (Salvar Novo ou Salvar Edição)
-btnConfirmar.addEventListener('click', async (e) => {
-    e.preventDefault();
-
-    const form = document.getElementById('form-cha');
-    const formData = new FormData(form);
-
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-    }
-
-    const response = await fetch('/index.html', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
-
-    const text = await response.text();
-    try {
-        const data = JSON.parse(text);
-        if (data.success) {
-            location.reload();
-        }
-    } catch (err) {
-        console.error("O servidor não retornou JSON, retornou isto:", text);
-    }
-});
+// NOTE: O listener de confirmar é declarado dentro do DOMContentLoaded (seção 5)
+// para unificar o fluxo de edição vs novo. Removido listener duplicado aqui.
 
 // botão para alterar status do chá (Ativo/Inativo) utilizando a função editar_status_produto do backend funcionando via delegação de eventos (ver seção 5)
 const btnstatus = document.querySelector('.btn-toggle-status');
@@ -183,6 +188,30 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('input-slug').value = d.slug || '';
             document.getElementById('input-featured').checked = d.featured === '1';
 
+            // Garante que os names estão no formato de edição esperado pelo backend
+            const mapEditNames = {
+                'input-id': 'edit_product_id',
+                'input-code': 'edit_code',
+                'input-nome': 'edit_name',
+                'input-description': 'edit_description',
+                'input-preco': 'edit_price',
+                'input-qtd': 'edit_stock',
+                'input-category': 'edit_category_id',
+                'input-image': 'edit_image',
+                'input-slug': 'edit_slug',
+                'input-featured': 'edit_featured'
+            };
+
+            Object.keys(mapEditNames).forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.name = mapEditNames[id];
+            });
+
+            // Remove flag de novo produto caso exista
+            const hiddenFlag = document.getElementById('hidden-new-product-flag');
+            if (hiddenFlag) hiddenFlag.remove();
+
             modal.style.display = 'flex';
         }
 
@@ -206,28 +235,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 2. BOTÃO CONFIRMAR (SALVAR EDIÇÃO)
+    // 2. BOTÃO CONFIRMAR (SALVAR EDIÇÃO OU NOVO)
     document.getElementById('btn-confirmar').addEventListener('click', function() {
         const form = document.getElementById('form-cha');
         const formData = new FormData(form);
 
-        // Adiciona o flag para o backend saber que é uma edição
-        formData.append('action', 'update_product');
+        // Se temos uma linha sendo editada, é uma edição
+        if (linhaSendoEditada) {
+            formData.append('action', 'update_product');
 
-        fetch('/index.html', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-               
-                location.reload(); // Recarrega para ver as mudanças
-            } else {
-                alert('Erro ao atualizar produto.');
-            }
-        })
-        .catch(error => console.error('Erro:', error));
+            fetch('/index.html', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Recarrega para ver as mudanças
+                } else {
+                    alert('Erro ao atualizar produto.');
+                }
+            })
+            .catch(error => console.error('Erro:', error));
+        } else {
+            // Novo produto: garante flag e envia como formulário padrão
+            if (!formData.has('new_product')) formData.append('new_product', '1');
+
+            fetch('/index.html', {
+                method: 'POST',
+                body: formData
+            })
+            .then(() => {
+                // O backend redireciona para a página; recarregamos para refletir alteração
+                window.location.reload();
+            })
+            .catch(error => console.error('Erro ao criar produto:', error));
+        }
     });
 
     // 3. BOTÃO CANCELAR/FECHAR MODAL
