@@ -1,0 +1,245 @@
+import os
+import sys
+from flask import Flask, render_template, request, redirect, url_for, Response
+from werkzeug.utils import secure_filename
+
+# Configuração de caminhos
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+TEMPLATES_DIR = os.path.join(PROJECT_ROOT, 'templates')
+STATIC_DIR = os.path.join(PROJECT_ROOT, 'static')
+UPLOAD_FOLDER = os.path.join(STATIC_DIR, 'uploads')
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+sys.path.insert(0, BASE_DIR)
+
+from acts import (
+    verificar_login,
+    listar_produtos,
+    cadastrar_produto,
+    atualizar_produto,
+    listar_estoque,
+    salvar_estoque,
+    listar_movimentacoes,
+    listar_categorias,
+    cadastrar_categoria,
+    atualizar_categoria,
+    excluir_categoria,
+    listar_fornecedores,
+    cadastrar_fornecedor,
+    atualizar_fornecedor,
+    excluir_fornecedor,
+    lista_pedidos,
+    listar_anos_pedidos,
+)
+from relatorios import (
+    get_relatorio_operacional,
+    get_relatorio_mensal,
+    get_dashboard_analytics,
+    exportar_operacional_csv,
+    exportar_mensal_csv,
+)
+
+app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def salvar_upload_imagem(campo='image_file'):
+    """Salva arquivo enviado e retorna caminho relativo dentro de static/."""
+    if campo not in request.files:
+        return None
+    file = request.files[campo]
+    if not file or file.filename == '':
+        return None
+    filename = secure_filename(file.filename)
+    destino = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(destino)
+    return 'uploads/' + filename
+
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        if verificar_login(email, password):
+            return redirect(url_for('index'))
+        return render_template('login.html', error="Email ou senha inválidos!")
+    return render_template('login.html')
+
+
+@app.route('/index.html')
+def index():
+    return render_template(
+        'index.html',
+        produtos=listar_produtos(),
+        categorias=listar_categorias(),
+        fornecedores=listar_fornecedores()
+    )
+
+
+@app.route('/produtos', methods=['POST'])
+def produtos_actions():
+    action = request.form.get('action')
+    product_id = request.form.get('id')
+    name = request.form.get('name')
+    description = request.form.get('description')
+    price = request.form.get('price')
+    image_url = request.form.get('image_url')
+    featured = 1 if request.form.get('featured') else 0
+    image_path = salvar_upload_imagem('image_file')
+
+    if action == 'add':
+        cadastrar_produto(name, description, price, image_url, image_path, featured)
+    elif action == 'edit':
+        atualizar_produto(product_id, name, description, price, image_url, image_path, featured)
+
+    return redirect(url_for('index'))
+
+
+@app.route('/estoque.html')
+def estoque():
+    return render_template(
+        'estoque.html',
+        estoque=listar_estoque(),
+        produtos=listar_produtos(),
+        categorias=listar_categorias(),
+        fornecedores=listar_fornecedores()
+    )
+
+
+@app.route('/estoque/salvar', methods=['POST'])
+def estoque_salvar():
+    product_id = request.form.get('product_id')
+    category_id = request.form.get('category_id')
+    supplier_id = request.form.get('supplier_id')
+    quantity = request.form.get('quantity')
+    salvar_estoque(product_id, category_id, supplier_id, quantity)
+    return redirect(url_for('estoque'))
+
+
+@app.route('/categorias.html', methods=['GET', 'POST'])
+def categorias():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        category_id = request.form.get('id')
+        name = request.form.get('name')
+        if action == 'add' and name:
+            cadastrar_categoria(name)
+        elif action == 'edit' and category_id and name:
+            atualizar_categoria(category_id, name)
+        elif action == 'delete' and category_id:
+            excluir_categoria(category_id)
+        return redirect(url_for('categorias'))
+    return render_template('categorias.html', categorias=listar_categorias())
+
+
+@app.route('/fornecedores.html', methods=['GET', 'POST'])
+def fornecedores():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        supplier_id = request.form.get('id')
+        name = request.form.get('name')
+        if action == 'add' and name:
+            cadastrar_fornecedor(name)
+        elif action == 'edit' and supplier_id and name:
+            atualizar_fornecedor(supplier_id, name)
+        elif action == 'delete' and supplier_id:
+            excluir_fornecedor(supplier_id)
+        return redirect(url_for('fornecedores'))
+    return render_template('fornecedores.html', fornecedores=listar_fornecedores())
+
+
+@app.route('/movimentacoes.html')
+def movimentacoes():
+    return render_template('movimentacoes.html', movs=listar_movimentacoes())
+
+
+@app.route('/pedidos.html')
+def pedidos():
+    return render_template('pedidos.html', pedidos=lista_pedidos())
+
+
+@app.route('/dashboard.html')
+def dashboard():
+    ano = request.args.get('ano', type=int)
+    meses = request.args.getlist('mes', type=int)
+    dados = get_dashboard_analytics(ano=ano, meses=meses)
+    anos = listar_anos_pedidos()
+    ano_selecionado = ano or dados.get('ano')
+    return render_template('dashboard.html', dados=dados, anos=anos, ano_selecionado=ano_selecionado, meses_selecionados=meses)
+
+
+@app.route('/relatorio_operacional.html')
+def rel_operacional():
+    filtros = {
+        'data_inicio': request.args.get('data_inicio'),
+        'data_fim': request.args.get('data_fim'),
+        'produto': request.args.get('produto'),
+        'fornecedor': request.args.get('fornecedor'),
+        'categoria': request.args.get('categoria'),
+    }
+    pagina = request.args.get('pagina', default=1, type=int)
+    resultado = get_relatorio_operacional(filtros=filtros, pagina=pagina, por_pagina=10)
+    return render_template(
+        'relatorio_operacional.html',
+        dados=resultado['dados'],
+        fornecedores=listar_fornecedores(),
+        categorias=listar_categorias(),
+        totais=resultado['totais'],
+        pagina=resultado['pagina'],
+        total_paginas=resultado['total_paginas'],
+        inicio=resultado['inicio'],
+        fim=resultado['fim'],
+        total_registros=resultado['total_registros'],
+    )
+
+
+@app.route('/relatorio_mensal.html')
+def rel_mensal():
+    ano = request.args.get('ano', type=int)
+    meses = request.args.getlist('mes', type=int)
+    resultado = get_relatorio_mensal(ano=ano, meses=meses)
+    return render_template(
+        'relatorio_mensal.html',
+        anos=listar_anos_pedidos(),
+        dados=resultado['dados'],
+        totais=resultado['totais'],
+        ano_selecionado=ano or resultado['ano'],
+        meses_selecionados=meses,
+    )
+
+
+@app.route('/exportar_operacional')
+def exportar_operacional():
+    filtros = {
+        'data_inicio': request.args.get('data_inicio'),
+        'data_fim': request.args.get('data_fim'),
+        'produto': request.args.get('produto'),
+        'fornecedor': request.args.get('fornecedor'),
+        'categoria': request.args.get('categoria'),
+    }
+    csv_data = exportar_operacional_csv(filtros)
+    return Response(
+        csv_data,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=relatorio_operacional_sai.csv'}
+    )
+
+
+@app.route('/exportar_mensal')
+def exportar_mensal():
+    ano = request.args.get('ano', type=int)
+    meses = request.args.getlist('mes', type=int)
+    csv_data = exportar_mensal_csv(ano=ano, meses=meses)
+    return Response(
+        csv_data,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=relatorio_mensal_sai.csv'}
+    )
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)

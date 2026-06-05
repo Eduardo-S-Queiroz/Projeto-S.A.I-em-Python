@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque - S.A.I</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container-geral">
+        <aside class="menu-lateral">
+            <div class="logo-area"><i class="fas fa-leaf"></i><h2>S.A.I</h2></div>
+            <nav>
+                <ul>
+                    <li class="item-menu"><a href="/index.html"><i class="fas fa-box"></i> Produtos (Geral)</a></li>
+                    <li class="item-menu ativo"><a href="/estoque.html"><i class="fas fa-warehouse"></i> Controle de Estoque</a></li>
+                    <li class="item-menu"><a href="/categorias.html"><i class="fas fa-tags"></i> Categorias</a></li>
+                    <li class="item-menu"><a href="/fornecedores.html"><i class="fas fa-truck"></i> Fornecedores</a></li>
+                    <li class="item-menu"><a href="/movimentacoes.html"><i class="fas fa-history"></i> Movimentações</a></li>
+                    <li class="item-menu"><a href="/pedidos.html"><i class="fas fa-shopping-cart"></i> Pedidos</a></li>
+                    <li class="item-menu"><a href="/dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                    <li class="item-menu"><a href="/relatorio_operacional.html"><i class="fas fa-file-invoice-dollar"></i> Rel. Operacional</a></li>
+                    <li class="item-menu"><a href="/relatorio_mensal.html"><i class="fas fa-calendar-alt"></i> Rel. Mensal</a></li>
+                    <li class="item-menu"><a href="/"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="area-principal">
+            <header class="topo-painel">
+                <div>
+                    <h1>Controle de Estoque</h1>
+                    <p>Vincule produtos já cadastrados a categoria, fornecedor e quantidade.</p>
+                </div>
+                <button class="btn-adicionar" type="button" onclick="abrirModalEstoque()">+ Adicionar ao Estoque</button>
+            </header>
+
+            <section class="secao-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>Fornecedor</th>
+                            <th>Quantidade</th>
+                            <th>Mínimo</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in estoque %}
+                        <tr>
+                            <td><strong>{{ item.product_name }}</strong></td>
+                            <td>{{ item.category_name or 'N/A' }}</td>
+                            <td>{{ item.supplier_name or 'N/A' }}</td>
+                            <td><strong>{{ item.quantity }}</strong></td>
+                            <td>{{ item.min_stock or 0 }}</td>
+                            <td>
+                                {% if item.quantity <= (item.min_stock or 0) %}
+                                    <span class="status inativo">Estoque Baixo</span>
+                                {% else %}
+                                    <span class="status ativo">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn-acao btn-editar js-editar-estoque"
+                                    data-product-id="{{ item.product_id }}"
+                                    data-category-id="{{ item.category_id or '' }}"
+                                    data-supplier-id="{{ item.supplier_id or '' }}"
+                                    data-quantity="{{ item.quantity }}">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" style="text-align:center;padding:30px;">Nenhum produto vinculado ao estoque.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <div id="modalEstoque" class="modal">
+        <div class="modal-conteudo">
+            <span class="modal-fechar" onclick="fecharModalEstoque()">&times;</span>
+            <h2 id="modalEstoqueTitulo">Gerenciar Estoque de Produto</h2>
+            <form action="/estoque/salvar" method="POST" id="formEstoque">
+                <div class="form-group">
+                    <label for="stockProductId">Selecionar Produto:</label>
+                    <select name="product_id" id="stockProductId" required>
+                        <option value="">Escolha um produto...</option>
+                        {% for p in produtos %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="stockCategoryId">Categoria:</label>
+                    <select name="category_id" id="stockCategoryId">
+                        <option value="">Sem Categoria</option>
+                        {% for c in categorias %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small><a href="/categorias.html">Cadastrar ou editar categorias</a></small>
+                </div>
+                <div class="form-group">
+                    <label for="stockSupplierId">Fornecedor:</label>
+                    <select name="supplier_id" id="stockSupplierId">
+                        <option value="">Sem Fornecedor</option>
+                        {% for s in fornecedores %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small><a href="/fornecedores.html">Cadastrar ou editar fornecedores</a></small>
+                </div>
+                <div class="form-group">
+                    <label for="stockQuantity">Quantidade em Estoque:</label>
+                    <input type="number" name="quantity" id="stockQuantity" value="0" min="0" required>
+                </div>
+                <button type="submit" class="btn-salvar">Salvar no Estoque</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalEstoque() {
+            document.getElementById('formEstoque').reset();
+            document.getElementById('modalEstoqueTitulo').innerText = 'Adicionar Produto ao Estoque';
+            document.getElementById('stockProductId').disabled = false;
+            document.getElementById('modalEstoque').style.display = 'block';
+        }
+        function fecharModalEstoque() { document.getElementById('modalEstoque').style.display = 'none'; }
+        function editarEstoque(btn) {
+            document.getElementById('modalEstoqueTitulo').innerText = 'Editar Estoque do Produto';
+            document.getElementById('stockProductId').value = btn.dataset.productId || '';
+            document.getElementById('stockProductId').disabled = false;
+            document.getElementById('stockCategoryId').value = btn.dataset.categoryId || '';
+            document.getElementById('stockSupplierId').value = btn.dataset.supplierId || '';
+            document.getElementById('stockQuantity').value = btn.dataset.quantity || 0;
+            document.getElementById('modalEstoque').style.display = 'block';
+        }
+        document.querySelectorAll('.js-editar-estoque').forEach(btn => btn.addEventListener('click', () => editarEstoque(btn)));
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('modalEstoque');
+            if (event.target === modal) fecharModalEstoque();
+        });
+    </script>
+    <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
+</body>
+</html>
