@@ -5,15 +5,15 @@ import plotly.graph_objects as go
 import plotly.express as px
 import calendar
 from datetime import datetime
-from flask import Flask, render_template,jsonify, request, redirect, url_for, Response
-# Adicionar o diretório atual ao sys.path para garantir que o módulo acts seja encontrado
+from flask import Flask, render_template, request, redirect, url_for, Response, jsonify
+
+# Adicionar o diretório atual ao sys.path para garantir que o módulo api seja encontrado
 sys.path.insert(0, os.path.dirname(__file__))
 
-from acts import ( conectar_bd, listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
+from api import ( listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
 cadastrar_produto, editar_status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email, detalhes_pedido )
 
 from dashboard import get_data_from_db
-
 
 # 1. Define o caminho base (onde o seu main.py está)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -68,133 +68,96 @@ def index():
         if 'category_id' in produto:
            produto['category'] = obter_nome_categoria(produto['category_id'])
 
-   # Converter os itens dos pedidos para exibir o nome do produto e calcular o preço total
+    # Converter os itens dos pedidos para exibir o nome do produto e calcular o preço total
+    # No seu loop de pedidos no main.py
     for pedido in lista_de_pedidos:
-        pedido['cliente'] = ''
+        pedido['cliente'] = 'Não informado'
+        pedido['email'] = 'Não informado'
         pedido['produto'] = ''
-        pedido['price'] = 0.0 # Inicializa como número para evitar erros de soma
-        pedido['exibir_itens'] = '' # Nova chave para o campo "itens" do modal
+        pedido['total_price'] = 0.0  # Padronizado com o HTML
+        pedido['itens'] = []         # Garante que a chave exista para o tojson não falhar
 
         if pedido.get('user_id') is not None:
             pedido['cliente'] = obter_nome_cliente(pedido['user_id'])
             pedido['email'] = obter_email(pedido['user_id'])
 
-        # Tenta buscar os dados brutos (evitamos usar apenas .items para não colidir com o método)
-        raw_itens = pedido.get('items') or pedido.get('itens')
+        # Tenta pegar os itens de qualquer uma das chaves possíveis
+        itens_json = pedido.get('items') or pedido.get('itens')
         
-        if raw_itens:
+        if itens_json:
             try:
-                # Decodificação e carregamento do JSON
-                if isinstance(raw_itens, (bytes, bytearray)):
-                    raw_itens = raw_itens.decode('utf-8')
+                # Decodificação se for bytes
+                if isinstance(itens_json, (bytes, bytearray)):
+                    itens_json = itens_json.decode('utf-8')
 
-                dados_itens = json.loads(raw_itens) if isinstance(raw_itens, str) else raw_itens
+                # Parse JSON se for string
+                if isinstance(itens_json, str):
+                    itens = json.loads(itens_json)
+                else:
+                    itens = itens_json
 
                 # Normaliza para lista
-                if isinstance(dados_itens, dict):
-                    dados_itens = [dados_itens]
+                if isinstance(itens, dict):
+                    itens = [itens]
 
-                if isinstance(dados_itens, list):
-                    # 1. Cria a lista formatada com Nome + Quantidade
-                    lista_formatada = []
-                    nomes_simples = []
+                if isinstance(itens, list):
+                    # Salva os itens processados na chave que o HTML espera
+                    pedido['itens'] = itens 
                     
-                    for i in dados_itens:
-                        if isinstance(i, dict):
-                            nome = str(i.get('name') or i.get('nome') or 'Produto')
-                            qtd = str(i.get('quantity') or i.get('quantidade') or '1')
-                            
-                            nomes_simples.append(nome)
-                            lista_formatada.append(f"{nome} ({qtd})")
+                    # Gera a string de nomes de produtos
+                    pedido['produto'] = ", ".join(
+                        str(item.get('name') or item.get('nome') or '') 
+                        for item in itens if isinstance(item, dict)
+                    )
                     
-                    # 2. Na coluna 'produto' (tabela), deixamos apenas os nomes
-                    pedido['produto'] = ", ".join(nomes_simples)
-                    
-                    # 3. Na chave 'exibir_itens' (modal), incluímos as quantidades
-                    # Isso resolverá o problema visto na image_91099c.png
-                    pedido['exibir_itens'] = ", ".join(lista_formatada)
-
-                    # Cálculo do preço (seu código original continua igual aqui)
-                    total = 0
-                    for i in dados_itens:
-                        if isinstance(i, dict):
-                            qnt = float(i.get('quantity') or i.get('quantidade') or 0)
-                            prc = float(i.get('price') or i.get('preco') or 0)
-                            total += (qnt * prc)
-                    pedido['price'] = total
-                else:
-                    pedido['produto'] = str(dados_itens)
-                    pedido['exibir_itens'] = str(dados_itens)
+                    # Calcula o preço total
+                    pedido['total_price'] = sum(
+                        float(item.get('quantity') or item.get('quantidade') or 0) * 
+                        float(item.get('price') or item.get('preco') or 0) 
+                        for item in itens if isinstance(item, dict)
+                    )
             except Exception as e:
-                print(f"Erro ao processar pedido {pedido.get('id')}: {e}")
-                pedido['produto'] = "Erro nos itens"
-                pedido['exibir_itens'] = "Erro ao processar dados"
-                    
-    # Verificar se é uma requisição POST
+                print(f"Erro ao processar itens: {e}")
+                pedido['produto'] = "Erro nos dados"
+                pedido['itens'] = []
+                
     if request.method == 'POST':
-        # 1. Ação: Alternar Status (AJAX)
+        # 1. Caso seja ALTERNAR STATUS (Botão de ligar/desligar)
+        # 1. Caso seja ALTERNAR STATUS
         if request.form.get('action') == 'toggle_status':
             product_id = request.form.get('product_id')
-            # Busca o produto para saber o status atual e inverter
-            produto = consultar_produto(product_id) # Nota: consultar_produto usa 'code', mas aqui precisamos por ID. 
+            # Captura o novo status enviado pelo JS
+            new_status = request.form.get('new_status') 
             
+            # Agora passamos os DOIS argumentos que a função exige
+            sucesso = editar_status_produto(product_id, new_status) 
             
-            # Verificando como o JS envia: ele envia 'product_id' e 'action'.
-            
-            conn = conectar_bd()
-            cursor = conn.cursor()
-            cursor.execute("SELECT status FROM products WHERE id = %s", (product_id,))
-            res = cursor.fetchone()
-            if res:
-                novo_status = 0 if res[0] else 1
-                editar_status_produto(product_id, novo_status)
-            cursor.close()
-            conn.close()
-            
-            return jsonify({"success": True})
-
-        # 2. Ação: Detalhes do Pedido (AJAX)
-        pedido_id_ajax = request.form.get('pedido_id')
-        if pedido_id_ajax:
-            dados = detalhes_pedido(pedido_id_ajax)
-            return Response(response=json.dumps(dados if dados else [], default=str), status=200, mimetype="application/json")
-
-        # 3. Ação: Cadastrar Novo Produto
-        if 'new_product' in request.form or 'new_code' in request.form:
-            code = request.form.get('new_code')
-            name = request.form.get('new_name')
-            description = request.form.get('new_description')
-            price = request.form.get('new_price')
-            category_id = request.form.get('new_category_id')
-            image = request.form.get('new_image')
-            stock = request.form.get('new_stock')
-            slug = request.form.get('new_slug')
-            featured = 1 if 'new_featured' in request.form else 0
-            cadastrar_produto(code, name, description, price, category_id, image, stock, slug, featured)
-            return redirect(url_for('index'))
-
-        # 4. Ação: Atualizar Produto Existente
-        if 'edit_product_id' in request.form:
-            product_id = request.form.get('edit_product_id')
-            code = request.form.get('edit_code')
-            name = request.form.get('edit_name')
-            description = request.form.get('edit_description')
-            price = request.form.get('edit_price')
-            
-            
-            raw_category = request.form.get('edit_category_id')
-            category_id = int(raw_category) if raw_category and raw_category.strip() != "" else None
-            
-            
-            image = request.form.get('edit_image')
-            stock = request.form.get('edit_stock')
-            slug = request.form.get('edit_slug')
-            featured = 1 if 'edit_featured' in request.form else 0
-            
-            sucesso = atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
-            
+            from flask import jsonify
             return jsonify({"success": sucesso})
-    
+
+        # 2. Caso seja SALVAR/EDITAR PRODUTO (Botão Confirmar do Modal)
+        elif 'product_id' in request.form:
+            # Usamos .get() para evitar o erro 400 se algum campo vier vazio
+            product_id = request.form.get('product_id')
+            code = request.form.get('code')
+            name = request.form.get('name')
+            description = request.form.get('description', '')
+            price = request.form.get('price', '0')
+            category_id = request.form.get('category_id')
+            image = request.form.get('image', '')
+            stock = request.form.get('stock', '0')
+            slug = request.form.get('slug', '')
+            
+            # Captura o checkbox (no Flask, se não estiver marcado, ele nem aparece no form)
+            featured = 1 if request.form.get('featured') == '1' else 0
+
+            # Validação mínima para não quebrar o banco de dados
+            if not name or not code:
+                return "Erro: Nome e Código são obrigatórios", 400
+
+            atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
+            
+            return redirect(url_for('index'))
 
 
     
@@ -210,7 +173,38 @@ def index():
         else:
             produto['details'] = {}
             
-
+    #ultilizando a função cadastrar_produto para cadastrar um novo produto caso os campos de cadastro sejam preenchidos
+    if request.method == 'POST' and 'new_product' in request.form:
+        code = request.form['new_code']
+        name = request.form['new_name']
+        description = request.form['new_description']
+        price = request.form['new_price']
+        category_id = request.form['new_category_id']
+        image = request.form['new_image']
+        stock = request.form['new_stock']
+        slug = request.form['new_slug']
+        featured = 1 if 'new_featured' in request.form else 0
+        
+        cadastrar_produto(code, name, description, price, category_id, image, stock, slug, featured)
+        
+        return redirect(url_for('index'))
+    
+    #detalhes do pedido usando a função detalhes_pedido para exibir no modal de detalhes do pedido e response
+    if request.method == 'POST':
+            pedido_id_ajax = request.form.get('pedido_id')
+            
+            if pedido_id_ajax:
+                dados = detalhes_pedido(pedido_id_ajax)
+                
+                # Converte a lista/dicionário para string JSON
+                json_string = json.dumps(dados if dados else [], default=str)
+                
+                # Retorna uma Resposta com o corpo JSON e o tipo de conteúdo correto
+                return Response(
+                    response=json_string,
+                    status=200,
+                    mimetype="application/json"
+                )
     
     # Verificar se as listas estão vazias e renderizar a página com mensagens de erro apropriadas
     
@@ -221,17 +215,13 @@ def index():
         return render_template('index.html', produtos=lista_de_produtos, pedidos=[], error="Nenhum pedido encontrado.")
     if lista_de_categorias is None:
         return render_template('index.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, error="Erro ao carregar categorias.")
-    
-    # BUSCA NOTIFICAÇÕES (Exemplo: produtos com estoque baixo)
-    notificacoes = [f"📦 Estoque baixo: {p['name']}" for p in lista_de_produtos if p['stock'] < 5]
-    
-    return render_template('index.html', notificacoes=notificacoes, produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias )
-    
 
+    
+    return render_template('index.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,)
+
+@app.route("/dashboard", methods=['GET'])
 @app.route("/dashboard.html", methods=['GET'])
 def dashboard():
-
-
     df_orders, df_products = get_data_from_db()
 
     # Criar gráficos usando Plotly
@@ -347,12 +337,12 @@ def dashboard():
         top_5_df = df_products.groupby('name')['stock'].sum().nlargest(5).reset_index()
     
         # 2. Criar o gráfico de barras horizontais
-        top_products_chart = px.bar(
+        top_products_chart = px.line(
             top_5_df,
             x='stock',
             y='name',
             orientation='h', # Define como horizontal
-            title='Top 5 Produtos com Maior Estoque',
+            title='Top 5 Produtos Mais Vendidos',
             text='stock', # Exibe o valor sobre a barra
             labels={'stock': 'Estoque', 'name': 'Produto'},
             template='plotly_white',
@@ -376,8 +366,7 @@ def dashboard():
     )
     
     # Renderizar o template do dashboard com os gráficos
-    return render_template('dashboard.html', 
-     top_products_chart=top_products_chart.to_html(full_html=False), status_chart=status_chart.to_html(full_html=False), fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
+    return render_template('dashboard.html', top_products_chart=top_products_chart.to_html(full_html=False), status_chart=status_chart.to_html(full_html=False), fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
 
 
 

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos e Pedidos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+        th, td {
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        .empty {
+            padding: 12px;
+            background: #fff8c4;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Produtos</h1>
+        {% if produtos and produtos|length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Preço</th>
+                        <th>Quantidade</th>
+                        <th>Status</th>
+                        <th>destaque</th>
+                        <th>Categoria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos %}
+                        <tr>
+                            <td>{{ produto.id if produto.id is defined else produto['id'] if produto['id'] is defined else '' }}</td>
+                            <td>{{ produto.name if produto.name is defined else produto['name'] if produto['name'] is defined else produto['description'] if produto['description'] is defined else produto['nome'] if produto['nome'] is defined else '' }}</td>
+                            <td>{{ produto.price if produto.price is defined else produto['price'] if produto['price'] is defined else produto['preco'] if produto['preco'] is defined else '' }}</td>
+                            <td>{{ produto.stock if produto.stock is defined else produto['stock'] if produto['stock'] is defined else produto['quantidade'] if produto['quantidade'] is defined else produto['estoque'] if produto['estoque'] is defined else '' }}</td>
+                            <td>{{ produto['status'] if 'status' in produto else 'inativo' }}</td>
+                            <td>{{ produto['featured'] if 'featured' in produto else 'inativo' }}</td>
+                            <td>{{ produto['category'] if 'category' in produto else produto['categoria'] if 'categoria' in produto else '' }}</td>
+                            
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">Nenhum produto encontrado.</div>
+        {% endif %}
+
+        <h2>Pedidos</h2>
+        {% if pedidos and pedidos|length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Produto</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ pedido.id if pedido.id is defined else pedido['id'] if pedido['id'] is defined else '' }}</td>
+                            <td>{{ pedido['cliente'] if 'cliente' in pedido else pedido['nome_cliente'] if 'nome_cliente' in pedido else '' }}</td>
+                            <td>{{ pedido['produto'] if 'produto' in pedido else '' }}</td>
+                            <td>R$ {{ "%.2f" | format(pedido['total_price'] | float) if 'total_price' in pedido else '0.00' }}</td>
+                            <td>{{ pedido.status if pedido.status is defined else pedido['status'] if pedido['status'] is defined else '' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">Nenhum pedido encontrado.</div>
+        {% endif %}
+    </div>
+</body>
+</html>

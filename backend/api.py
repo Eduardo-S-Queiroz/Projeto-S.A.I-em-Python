@@ -1,6 +1,7 @@
 import os
 import mysql.connector
 import uuid
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Carrega variáveis de ambiente do arquivo .env
@@ -96,15 +97,15 @@ def listar_categorias():
     except mysql.connector.Error:
         return []
 
-def consultar_produto(product_id):
-    """Função para consultar um produto específico pelo ID"""
+def consultar_produto(code):
+    """Função para consultar um produto específico pelo codigo"""
     conn = conectar_bd()
     if not conn:
         return None
     
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM products WHERE id = %s", (product_id,))
+        cursor.execute("SELECT * FROM products WHERE code = %s", (code,))
         produto = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -112,7 +113,7 @@ def consultar_produto(product_id):
     except mysql.connector.Error:
         return None
 
-def atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured): 
+def atualizar_produto(code, product_id, name, description, price, category_id, image, stock, slug, featured): 
     """Função para atualizar um produto existente no banco de dados"""
     conn = conectar_bd()
     if not conn:
@@ -149,13 +150,17 @@ def editar_status_produto(product_id, new_status):
         return False
 
 def detalhes_pedido(id_pedido):
-    """Função para obter os detalhes de um pedido específico pelo ID"""
+    """Função corrigida para obter os detalhes de um pedido específico pelo ID"""
     conn = conectar_bd()
     if not conn:
         return None
     
     try:
+        # Usamos dictionary=True para que o retorno seja um dicionário com os nomes das colunas
         cursor = conn.cursor(dictionary=True)
+        
+        # Correção: Adicionada cláusula WHERE para filtrar pelo ID
+        # Ajustados os aliases para manter consistência com o Front-end
         query = """
             SELECT 
                 o.id, 
@@ -163,7 +168,7 @@ def detalhes_pedido(id_pedido):
                 o.created_at,
                 u.name AS cliente, 
                 u.email AS email,
-                GROUP_CONCAT(p.name SEPARATOR ', ') AS produto
+                p.name AS produto
             FROM orders o
             JOIN users u ON o.user_id = u.id
             JOIN cart_items ci ON o.id = ci.order_id
@@ -173,10 +178,16 @@ def detalhes_pedido(id_pedido):
         """
         cursor.execute(query, (id_pedido,))
         pedido = cursor.fetchone()
+        
+        # Formata a data se necessário antes de enviar para o front
+        if pedido and isinstance(pedido['created_at'], datetime):
+            pedido['created_at'] = pedido['created_at'].strftime('%d/%m/%Y %H:%M')
+            
         cursor.close()
         conn.close()
         return pedido
-    except mysql.connector.Error:
+    except mysql.connector.Error as err:
+        print(f"Erro: {err}")
         return None
     
 def obter_nome_cliente(user_id):
@@ -242,7 +253,6 @@ def obter_email(user_id):
         return result[0] if result else "N/A"
     except mysql.connector.Error:
         return "N/A"
-
 if __name__ == "__main__":
     # Teste rápido via terminal
     u = input("Email: ")

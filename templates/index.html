@@ -19,16 +19,19 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>    
+<body>
+
     <div class="container-geral">
+        
         <aside class="menu-lateral">
             <div class="logo-area">
                 <i class="ph ph-leaf"></i> <h2>Chá Admin</h2>
             </div>
-            
             <nav>
-                <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
                 <ul>
+                    <div>
+                        <button><a href="/dashboard">Acessar Dashboard</a></button>
+                    </div>
                     <li class="item-menu ativo" data-tela="tela-estoque">
                         <i class="ph ph-package"></i> Gerenciamento
                     </li>
@@ -45,37 +48,24 @@
         <main class="area-principal">
 
             <div class="icones-usuario">
-                 <a href="{{ url_for('dashboard') }}"  >
-                        <i class="ph ph-chart-bar"></i> Dashboard
-                </a>
                 <div class="icone-wrapper" id="btn-ajuda" title="Ajuda">
                     <i class="ph ph-question"></i>
                 </div>
+                
                 <div class="icone-wrapper" id="btn-notificacao">
                     <i class="ph ph-bell"></i>
-                    <!-- Só mostra a bolinha se houver notificações -->
-                    {% if notificacoes %}
-                        <span class="bolinha-aviso">{{ notificacoes|length }}</span>
-                    {% endif %}
-
+                    <span class="bolinha-aviso"></span>
                     <div class="caixa-dropdown" id="drop-notificacao">
                         <h4>Notificações Recentes</h4>
-                        {% for msg in notificacoes %}
-                            <p>{{ msg }}</p>
-                        {% else %}
-                            <p>Tudo em dia! ✅</p>
-                        {% endfor %}
+                        <p>🛒 Novo pedido: João Silva</p>
+                        <p>📦 Estoque baixo: Chá Verde Detox</p>
                     </div>
                 </div>
-
 
                 <div class="icone-wrapper" id="btn-perfil">
                     <i class="ph ph-coffee"></i>
                     <div class="caixa-dropdown" id="drop-perfil">
-                        
-                        <button id="btn-voltar" class="ph-ph-sign-out2">
-                            <i class="ph ph-sign-out"></i> Voltar para o login
-                        </button>
+                        <button id="btnVoltarLogin" class="ph-ph-sign-out2"><i class="ph-ph-sign-out"></i> 【➜  Voltar para o login</button>
                     </div>
                 </div>
             </div>
@@ -116,17 +106,14 @@
                             {% if produtos and produtos|length > 0 %}
                                 {% for produto in produtos %}
                                     <tr data-product-id="{{ produto.id }}" 
-                                        data-id="{{ produto.id }}"
                                         data-code="{{ produto.code }}" 
                                         data-description="{{ produto.description }}"
                                         data-category="{{ produto.category_id }}"
                                         data-image="{{ produto.image }}"
                                         data-slug="{{ produto.slug }}"
                                         data-featured="{{ produto.featured }}"
-                                        data-name="{{ produto.name }}"
                                         data-stock="{{ produto.stock }}"
-                                        data-price="{{ produto.price }}"
-                                        data-status="{{ produto.status }}">
+                                        data-price="{{ produto.price }}">
 
                                         <td>{{ produto.name if produto.name is defined else produto['name'] }}</td>
                                         <td><span class="status {{ 'ativo' if produto['status'] == 'ativo' else 'inativo' }}">{{ produto['status'] }}</span></td>
@@ -136,7 +123,7 @@
                                             <button type="button" class="btn-acao btn-editar" title="Editar chá">
                                                 <i class="ph ph-pencil-simple"></i>
                                             </button>
-                                            <button type="button" class="btn-acao btn-toggle-status" title="Alternar status">
+                                            <button type="button" class="btn-acao btn-toggle-status" data-id="{{ produto.id }}" title="Alternar status" data-status="{{ produto.status }}">
                                                 <i class="ph ph-power"></i>
                                             </button>
                                         </td>
@@ -185,22 +172,21 @@
                         <tbody id="corpo-tabela-pedidos">
                             {% for pedido in pedidos %}
                             <tr class="linha-pedido" 
-                                data-pedido-id="{{ pedido.id }}"
+                                data-id="{{ pedido.id }}"
                                 data-cliente="{{ pedido.cliente }}" 
                                 data-email="{{ pedido.email }}"
                                 data-status="{{ pedido.status }}"
                                 data-data="{{ pedido.created_at }}"
-                                data-endereco="{{ pedido.shipping_address }}"
                                 data-produto="{{ pedido.produto }}"
-                                data-itens="{{ pedido.exibir_itens }}"
-                                data-total_price="{{ pedido.total_price }}"
-                                >
+                                data-quantidade="{{ pedido.quantidade | default(1) }}"
+                                data-preco="{{ pedido.total_price }}"
+                                data-itens='{{ pedido.itens }}'>
                                 
                                 <td>{{ pedido.cliente }}</td>
                                 <td>{{ pedido.email }}</td>
                                 <td>{{ pedido.produto }}</td>
                                 <td>
-                                    <span class="status-badge status-{{ pedido.status }}">
+                                    <span class="status-badge status-{{ pedido.status | lower }}">
                                         {{ pedido.status }}
                                     </span>
                                 </td>
@@ -246,84 +232,50 @@
         </main>
     </div>
 
-    <div id="tela-dashboard" class="tela-secao" style="display: none;">
-        <header class="topo-painel">
-            <div>
-                <h1>Dashboard de Vendas</h1>
-                <p>Análise visual do desempenho da loja.</p>
-            </div>
-        </header>
-
-        <section class="secao-card">
-            <div class="dashboard-graficos" style="display: flex; flex-wrap: wrap; gap: 20px;">
-               <div class="dashboard-grid">
-                    <div class="chart-card">
-                        {{ fig_sales | safe }}
-                    </div>
-
-                    <div class="chart-card">
-                        {{ fig_category | safe }}
-                    </div>
-
-                    <div class="chart-card">
-                            {{ status_chart | safe }}
-                    </div>
-                    <div class="chart-card">
-                        {{ top_products_chart | safe }}
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
     <div class="janela-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
     
         <div class="modal-conteudo">
             <h2 id="modal-titulo">Editar Chá</h2>
             <form id="form-cha">
-                <div class="campo-modal">
-                    <label>ID:</label>
-                    <input type="number" name="edit_product_id" id="input-id" >
-                </div>
-                <div class="campo-modal">
+                <input type="hidden" id="input-id"> <div class="campo-modal">
                     <label>Código:</label>
-                    <input type="text" name="edit_code" id="input-code">
+                    <input type="text" id="input-code">
                 </div>
                 <div class="campo-modal">
                     <label>Nome do Chá:</label>
-                    <input type="text" name="edit_name" id="input-nome">
+                    <input type="text" id="input-nome">
                 </div>
                 <div class="campo-modal">
                     <label>Descrição:</label>
-                    <textarea name="edit_description" id="input-description" rows="3"></textarea>
+                    <textarea id="input-description" rows="3"></textarea>
                 </div>
                 <div class="campo-modal-grupo" style="display: flex; gap: 10px;">
                     <div class="campo-modal">
                         <label>Preço (R$):</label>
-                        <input type="number" name="edit_price" id="input-preco" step="0.01">
+                        <input type="number" id="input-preco" step="0.01">
                     </div>
                     <div class="campo-modal">
                         <label>Quantidade:</label>
-                        <input type="number" name="edit_stock" id="input-qtd">
+                        <input type="number" id="input-qtd">
                     </div>
                 </div>
                 <div class="campo-modal">
                     <label>Categoria:</label>
-                    <select name="edit_category_id" id="input-category">
+                    <select id="input-category">
                         <option value="">Selecione uma categoria</option>
                     </select>
                 </div>
                 <div class="campo-modal">
                     <label>URL da Imagem:</label>
-                    <input type="text" name="edit_image" id="input-image">
+                    <input type="text" id="input-image">
                 </div>
                 <div class="campo-modal">
                     <label>Slug (URL amigável):</label>
-                    <input type="text" name="edit_slug" id="input-slug">
+                    <input type="text" id="input-slug">
                 </div>
                 <div class="campo-modal">
                     <label>
-                        <input type="checkbox" name="edit_featured" id="input-featured"> Produto em Destaque
+                        <input type="checkbox" id="input-featured"> Produto em Destaque
                     </label>
                 </div>
 
@@ -341,36 +293,40 @@
             <h2 id="modal-titulo-pedido">Detalhes do Pedido</h2>
             <form id="form-detalhes-pedido">
                 <div class="campo-modal">
+                    <label>ID do Pedido:</label>
+                    <input type="text" id="detalhes-id" disabled>
+                </div>
+                <div class="campo-modal">
                     <label>Cliente:</label>
                     <input type="text" id="detalhes-cliente" disabled>
                 </div>
                 <div class="campo-modal">
                     <label>Email:</label>
-                    <input type="text" name="edit_email" id="detalhes-email" disabled>
+                    <input type="text" id="detalhes-email" disabled>
                 </div>
                 <div class="campo-modal">
                     <label>Produto:</label>
-                    <input type="text" name="edit_product" id="detalhes-produto" disabled>
+                    <input type="text" id="detalhes-produto" disabled>
                 </div>
                 <div class="campo-modal">
-                    <label>itens:</label>
-                    <textarea name="edit_itens" id="detalhes-itens" disabled></textarea>
+                    <label>Quantidade:</label>
+                    <input type="text" id="detalhes-qtd" disabled>
                 </div>
                 <div class="campo-modal">
-                    <label>total (R$):</label>
-                    <input type="number" name="edit_total_price" id="detalhes-total_price" disabled step="0.01">
-                 </div>
+                    <label>Preço Total:</label>
+                    <input type="text" id="detalhes-preco" disabled>
+                </div>
+                    <div class="campo-modal">
+                        <label>Itens:</label>
+                        <textarea id="detalhes-itens" rows="4" disabled></textarea>
+                    </div>
                 <div class="campo-modal">
                     <label>Status:</label>
-                    <input type="text" name="edit_status" id="detalhes-status" disabled>
-                </div>
-                <div class="campo-modal">
-                    <label>Endereço de Entrega:</label>
-                    <textarea name="edit_shipping_address" id="detalhes-endereco" disabled></textarea>
+                    <input type="text" id="detalhes-status" disabled>
                 </div>
                 <div class="campo-modal">
                     <label>Data do Pedido:</label>
-                    <input type="text" name="edit_created_at" id="detalhes-data" disabled>
+                    <input type="text" id="detalhes-data" disabled>
                 </div>
             </form>
             <div class="modal-botoes">
@@ -380,6 +336,5 @@
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
- <div id="toast-container"></div>
 </body>
 </html>
