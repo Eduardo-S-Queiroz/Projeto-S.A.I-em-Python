@@ -1,340 +1,155 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - Chá & Cia</title>
-    
+    <title>Produtos - S.A.I</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
-
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.png') }}">
-
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
     <div class="container-geral">
-        
         <aside class="menu-lateral">
-            <div class="logo-area">
-                <i class="ph ph-leaf"></i> <h2>Chá Admin</h2>
-            </div>
+            <div class="logo-area"><i class="fas fa-leaf"></i><h2>S.A.I</h2></div>
             <nav>
                 <ul>
-                    <div>
-                        <button><a href="/dashboard">Acessar Dashboard</a></button>
-                    </div>
-                    <li class="item-menu ativo" data-tela="tela-estoque">
-                        <i class="ph ph-package"></i> Gerenciamento
-                    </li>
-                    <li class="item-menu" data-tela="tela-pedidos">
-                        <i class="ph ph-shopping-cart"></i> Pedidos
-                    </li>
-                    <li class="item-menu" data-tela="tela-acessibilidade">
-                        <i class="ph ph-wheelchair"></i> Acessibilidade
-                    </li>
+                    <li class="item-menu ativo"><a href="/index.html"><i class="fas fa-box"></i> Produtos (Geral)</a></li>
+                    <li class="item-menu"><a href="/estoque.html"><i class="fas fa-warehouse"></i> Controle de Estoque</a></li>
+                    <li class="item-menu"><a href="/categorias.html"><i class="fas fa-tags"></i> Categorias</a></li>
+                    <li class="item-menu"><a href="/fornecedores.html"><i class="fas fa-truck"></i> Fornecedores</a></li>
+                    <li class="item-menu"><a href="/movimentacoes.html"><i class="fas fa-history"></i> Movimentações</a></li>
+                    <li class="item-menu"><a href="/pedidos.html"><i class="fas fa-shopping-cart"></i> Pedidos</a></li>
+                    <li class="item-menu"><a href="/dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                    <li class="item-menu"><a href="/relatorio_operacional.html"><i class="fas fa-file-invoice-dollar"></i> Rel. Operacional</a></li>
+                    <li class="item-menu"><a href="/relatorio_mensal.html"><i class="fas fa-calendar-alt"></i> Rel. Mensal</a></li>
+                    <li class="item-menu"><a href="/"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                 </ul>
             </nav>
         </aside>
 
         <main class="area-principal">
-
-            <div class="icones-usuario">
-                <div class="icone-wrapper" id="btn-ajuda" title="Ajuda">
-                    <i class="ph ph-question"></i>
+            <header class="topo-painel">
+                <div>
+                    <h1>Gerenciamento de Produtos</h1>
+                    <p>Controle a vitrine do e-commerce de chás: aparência, descrição, preço e imagem.</p>
                 </div>
-                
-                <div class="icone-wrapper" id="btn-notificacao">
-                    <i class="ph ph-bell"></i>
-                    <span class="bolinha-aviso"></span>
-                    <div class="caixa-dropdown" id="drop-notificacao">
-                        <h4>Notificações Recentes</h4>
-                        <p>🛒 Novo pedido: João Silva</p>
-                        <p>📦 Estoque baixo: Chá Verde Detox</p>
-                    </div>
-                </div>
+                <button class="btn-adicionar" type="button" onclick="abrirModalProduto()">+ Novo Produto</button>
+            </header>
 
-                <div class="icone-wrapper" id="btn-perfil">
-                    <i class="ph ph-coffee"></i>
-                    <div class="caixa-dropdown" id="drop-perfil">
-                        <button id="btnVoltarLogin" class="ph-ph-sign-out2"><i class="ph-ph-sign-out"></i> 【➜  Voltar para o login</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tela-estoque" class="tela-secao">
-                <header class="topo-painel">
-                    <div>
-                        <h1>Gerenciamento de Chás</h1>
-                        <p>Controle de estoque e visibilidade da loja.</p>
-                    </div>
-                    <button class="btn-adicionar">+ Novo Chá</button>
-                </header>
-
-                <section class="secao-card">
-                    <div class="cabecalho-tabela-interna">
-                        <div>
-                            <h2 style="font-size: 1.2rem; color: var(--cor-texto-principal);">Lista de Produtos</h2>
-                            <p style="font-size: 0.85rem; color: var(--cor-texto-mutado);">Visão geral do inventário atual</p>
-                        </div>
-                        
-                        <div class="caixa-busca">
-                            <i class="ph ph-magnifying-glass"></i>
-                            <input type="text" placeholder="Pesquisar chá pelo nome ou código..." class="input-busca">
-                        </div>
-                    </div>
-
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Produto</th>
-                                <th>Status</th>
-                                <th>Qtd.</th>
-                                <th>Preço</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody class="corpo-tabela" id="corpo-tabela" data-produtos='{{ produtos | tojson }}' data-categorias='{{ categorias | tojson }}'>
-                            {% if produtos and produtos|length > 0 %}
-                                {% for produto in produtos %}
-                                    <tr data-product-id="{{ produto.id }}" 
-                                        data-code="{{ produto.code }}" 
-                                        data-description="{{ produto.description }}"
-                                        data-category="{{ produto.category_id }}"
-                                        data-image="{{ produto.image }}"
-                                        data-slug="{{ produto.slug }}"
-                                        data-featured="{{ produto.featured }}"
-                                        data-stock="{{ produto.stock }}"
-                                        data-price="{{ produto.price }}">
-
-                                        <td>{{ produto.name if produto.name is defined else produto['name'] }}</td>
-                                        <td><span class="status {{ 'ativo' if produto['status'] == 'ativo' else 'inativo' }}">{{ produto['status'] }}</span></td>
-                                        <td>{{ produto.stock if produto.stock is defined else produto['stock'] }}</td>
-                                        <td>R$ {{ "%.2f" | format(produto.price | float) }}</td>
-                                        <td>
-                                            <button type="button" class="btn-acao btn-editar" title="Editar chá">
-                                                <i class="ph ph-pencil-simple"></i>
-                                            </button>
-                                            <button type="button" class="btn-acao btn-toggle-status" data-id="{{ produto.id }}" title="Alternar status" data-status="{{ produto.status }}">
-                                                <i class="ph ph-power"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="5" style="text-align: center; padding: 20px; color: var(--cor-texto-mutado);">Nenhum produto encontrado.</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </section>
-            </div>
-
-            <div id="tela-pedidos" class="tela-secao" style="display: none;">
-                <header class="topo-painel">
-                    <div>
-                        <h1>Registro de Vendas</h1>
-                        <p>Histórico de clientes e pedidos realizados.</p>
-                    </div>
-                </header>
-                
-                <section class="secao-card">
-                    <div class="cabecalho-tabela-interna">
-                        <div>
-                            <h2 style="font-size: 1.2rem; color: var(--cor-texto-principal);">Últimos Pedidos</h2>
-                            <p style="font-size: 0.85rem; color: var(--cor-texto-mutado);">Acompanhe as transações recentes</p>
-                        </div>
-                        <div class="caixa-busca">
-                            <i class="ph ph-magnifying-glass"></i>
-                            <input type="text" placeholder="Buscar pedido por cliente, email ou produto..." class="input-busca">
-                        </div>
-                    </div>
-
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Email</th>    
-                                <th>Produto</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="corpo-tabela-pedidos">
-                            {% for pedido in pedidos %}
-                            <tr class="linha-pedido" 
-                                data-id="{{ pedido.id }}"
-                                data-cliente="{{ pedido.cliente }}" 
-                                data-email="{{ pedido.email }}"
-                                data-status="{{ pedido.status }}"
-                                data-data="{{ pedido.created_at }}"
-                                data-produto="{{ pedido.produto }}"
-                                data-quantidade="{{ pedido.quantidade | default(1) }}"
-                                data-preco="{{ pedido.total_price }}"
-                                data-itens='{{ pedido.itens }}'>
-                                
-                                <td>{{ pedido.cliente }}</td>
-                                <td>{{ pedido.email }}</td>
-                                <td>{{ pedido.produto }}</td>
-                                <td>
-                                    <span class="status-badge status-{{ pedido.status | lower }}">
-                                        {{ pedido.status }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn-acao btn-detalhes" title="Ver detalhes">
-                                        <i class="ph ph-eye"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </section>
-            </div>
-
-            <div id="tela-acessibilidade" class="tela-secao" style="display: none;">
-                <header class="topo-painel">
-                    <div>
-                        <h1>Aparência e Preferências</h1>
-                        <p>Personalize o sistema para a sua necessidade.</p>
-                    </div>
-                </header>
-
-                <section class="secao-card card-padding">
-                    <div class="opcao-preferencia">
-                        <h3>Tema do Sistema</h3>
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--cor-texto-principal); font-weight: 500;">
-                            <input type="checkbox" id="toggle-dark-mode" style="width: 18px; height: 18px; accent-color: var(--cor-principal); cursor: pointer;">
-                            Ativar Modo Escuro
-                        </label>
-                        <p class="info-texto">Muda as cores do painel para tons escuros, ideal para ambientes com pouca luz.</p>
-                    </div>
-                    <hr>
-                    <div class="opcao-preferencia">
-                        <h3>Assistência</h3>
-                        <label>Libras:</label><br><br>
-                        <button type="button" class="btn-adicionar" id="btn-libras">Ativar VLibras</button>
-                        <p class="info-texto">Ativa o assistente virtual para tradução em LIBRAS.</p>
-                    </div>
-                </section>
-            </div>
-
+            <section class="secao-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Imagem</th>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Preço</th>
+                            <th>Destaque</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for produto in produtos %}
+                        <tr>
+                            <td>
+                                {% if produto.image_url %}
+                                    <img src="{{ produto.image_url }}" alt="{{ produto.name }}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;">
+                                {% elif produto.image_path %}
+                                    <img src="{{ url_for('static', filename=produto.image_path) }}" alt="{{ produto.name }}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;">
+                                {% else %}
+                                    <div style="width:56px;height:56px;background:#eee;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image"></i></div>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ produto.name }}</strong></td>
+                            <td>{{ (produto.description or '')[:90] }}{% if produto.description and produto.description|length > 90 %}...{% endif %}</td>
+                            <td>R$ {{ "%.2f" | format(produto.price | float) }}</td>
+                            <td><span class="status {{ 'ativo' if produto.featured else 'inativo' }}">{{ 'Sim' if produto.featured else 'Não' }}</span></td>
+                            <td>
+                                <button type="button" class="btn-acao btn-editar js-editar-produto"
+                                    data-id="{{ produto.id }}"
+                                    data-name="{{ produto.name|e }}"
+                                    data-description="{{ (produto.description or '')|e }}"
+                                    data-price="{{ produto.price }}"
+                                    data-image-url="{{ (produto.image_url or '')|e }}"
+                                    data-featured="{{ 1 if produto.featured else 0 }}">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" style="text-align:center;padding:30px;">Nenhum produto cadastrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
         </main>
     </div>
 
-    <div class="janela-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
-    
+    <div id="modalProduto" class="modal">
         <div class="modal-conteudo">
-            <h2 id="modal-titulo">Editar Chá</h2>
-            <form id="form-cha">
-                <input type="hidden" id="input-id"> <div class="campo-modal">
-                    <label>Código:</label>
-                    <input type="text" id="input-code">
+            <span class="modal-fechar" onclick="fecharModalProduto()">&times;</span>
+            <h2 id="modalTitle">Novo Produto</h2>
+            <form action="/produtos" method="POST" enctype="multipart/form-data" id="formProduto">
+                <input type="hidden" name="action" id="formAction" value="add">
+                <input type="hidden" name="id" id="formId">
+                <div class="form-group">
+                    <label for="formName">Nome:</label>
+                    <input type="text" name="name" id="formName" required>
                 </div>
-                <div class="campo-modal">
-                    <label>Nome do Chá:</label>
-                    <input type="text" id="input-nome">
+                <div class="form-group">
+                    <label for="formDescription">Descrição:</label>
+                    <textarea name="description" id="formDescription" rows="4"></textarea>
                 </div>
-                <div class="campo-modal">
-                    <label>Descrição:</label>
-                    <textarea id="input-description" rows="3"></textarea>
+                <div class="form-group">
+                    <label for="formPrice">Preço (R$):</label>
+                    <input type="number" name="price" id="formPrice" step="0.01" min="0" required>
                 </div>
-                <div class="campo-modal-grupo" style="display: flex; gap: 10px;">
-                    <div class="campo-modal">
-                        <label>Preço (R$):</label>
-                        <input type="number" id="input-preco" step="0.01">
-                    </div>
-                    <div class="campo-modal">
-                        <label>Quantidade:</label>
-                        <input type="number" id="input-qtd">
-                    </div>
+                <div class="form-group">
+                    <label for="formImageUrl">URL da Imagem:</label>
+                    <input type="url" name="image_url" id="formImageUrl" placeholder="https://...">
                 </div>
-                <div class="campo-modal">
-                    <label>Categoria:</label>
-                    <select id="input-category">
-                        <option value="">Selecione uma categoria</option>
-                    </select>
+                <div class="form-group">
+                    <label for="formImageFile">Ou Upload de Imagem:</label>
+                    <input type="file" name="image_file" id="formImageFile" accept="image/*">
                 </div>
-                <div class="campo-modal">
-                    <label>URL da Imagem:</label>
-                    <input type="text" id="input-image">
+                <div class="form-group">
+                    <label><input type="checkbox" name="featured" id="formFeatured"> Destacar na loja</label>
                 </div>
-                <div class="campo-modal">
-                    <label>Slug (URL amigável):</label>
-                    <input type="text" id="input-slug">
-                </div>
-                <div class="campo-modal">
-                    <label>
-                        <input type="checkbox" id="input-featured"> Produto em Destaque
-                    </label>
-                </div>
-
-                <div class="modal-botoes">
-                    <button type="button" class="btn-cancelar">Cancelar</button>
-                    <button type="button" class="btn-salvar" id="btn-confirmar">Confirmar</button>
-                </div>
+                <button type="submit" class="btn-salvar">Salvar Produto</button>
             </form>
-        </div>
-    </div> 
-
-    <div class="janela-modal" id="overlay-detalhes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000;"> 
-    
-        <div class="modal-conteudo" id="modal-interno-detalhes">
-            <h2 id="modal-titulo-pedido">Detalhes do Pedido</h2>
-            <form id="form-detalhes-pedido">
-                <div class="campo-modal">
-                    <label>ID do Pedido:</label>
-                    <input type="text" id="detalhes-id" disabled>
-                </div>
-                <div class="campo-modal">
-                    <label>Cliente:</label>
-                    <input type="text" id="detalhes-cliente" disabled>
-                </div>
-                <div class="campo-modal">
-                    <label>Email:</label>
-                    <input type="text" id="detalhes-email" disabled>
-                </div>
-                <div class="campo-modal">
-                    <label>Produto:</label>
-                    <input type="text" id="detalhes-produto" disabled>
-                </div>
-                <div class="campo-modal">
-                    <label>Quantidade:</label>
-                    <input type="text" id="detalhes-qtd" disabled>
-                </div>
-                <div class="campo-modal">
-                    <label>Preço Total:</label>
-                    <input type="text" id="detalhes-preco" disabled>
-                </div>
-                    <div class="campo-modal">
-                        <label>Itens:</label>
-                        <textarea id="detalhes-itens" rows="4" disabled></textarea>
-                    </div>
-                <div class="campo-modal">
-                    <label>Status:</label>
-                    <input type="text" id="detalhes-status" disabled>
-                </div>
-                <div class="campo-modal">
-                    <label>Data do Pedido:</label>
-                    <input type="text" id="detalhes-data" disabled>
-                </div>
-            </form>
-            <div class="modal-botoes">
-                <button type="button" class="btn-cancelar" id="btn-fechar-detalhes">Fechar</button>
-            </div>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        function abrirModalProduto() {
+            const form = document.getElementById('formProduto');
+            form.reset();
+            document.getElementById('modalTitle').innerText = 'Novo Produto';
+            document.getElementById('formAction').value = 'add';
+            document.getElementById('formId').value = '';
+            document.getElementById('modalProduto').style.display = 'block';
+        }
+        function fecharModalProduto() { document.getElementById('modalProduto').style.display = 'none'; }
+        function editarProduto(btn) {
+            document.getElementById('modalTitle').innerText = 'Editar Produto';
+            document.getElementById('formAction').value = 'edit';
+            document.getElementById('formId').value = btn.dataset.id || '';
+            document.getElementById('formName').value = btn.dataset.name || '';
+            document.getElementById('formDescription').value = btn.dataset.description || '';
+            document.getElementById('formPrice').value = btn.dataset.price || 0;
+            document.getElementById('formImageUrl').value = btn.dataset.imageUrl || '';
+            document.getElementById('formFeatured').checked = btn.dataset.featured === '1';
+            document.getElementById('modalProduto').style.display = 'block';
+        }
+        document.querySelectorAll('.js-editar-produto').forEach(btn => btn.addEventListener('click', () => editarProduto(btn)));
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('modalProduto');
+            if (event.target === modal) fecharModalProduto();
+        });
+    </script>
+    <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
 </body>
 </html>

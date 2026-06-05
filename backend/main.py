@@ -1,374 +1,245 @@
 import os
 import sys
-import json
-import plotly.graph_objects as go
-import plotly.express as px
-import calendar
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, Response, jsonify
+from flask import Flask, render_template, request, redirect, url_for, Response
+from werkzeug.utils import secure_filename
 
-# Adicionar o diretório atual ao sys.path para garantir que o módulo api seja encontrado
-sys.path.insert(0, os.path.dirname(__file__))
-
-from api import ( listar_produtos, verificar_login, listar_categorias, lista_pedidos, consultar_produto, 
-cadastrar_produto, editar_status_produto, atualizar_produto, obter_nome_cliente, obter_nome_categoria, obter_email, detalhes_pedido )
-
-from dashboard import get_data_from_db
-
-# 1. Define o caminho base (onde o seu main.py está)
+# Configuração de caminhos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# 2. Define o caminho do projeto raiz (um nível acima de backend)
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
-
-# 3. Configura as pastas corretamente (elas estão na raiz do projeto)
 TEMPLATES_DIR = os.path.join(PROJECT_ROOT, 'templates')
 STATIC_DIR = os.path.join(PROJECT_ROOT, 'static')
+UPLOAD_FOLDER = os.path.join(STATIC_DIR, 'uploads')
 
-# 4. Inicializa o Flask usando essas variáveis
-app = Flask(__name__, 
-            template_folder=TEMPLATES_DIR,
-            static_folder=STATIC_DIR) 
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-# Rota de Login (Única responsável pela raiz '/')
+sys.path.insert(0, BASE_DIR)
+
+from acts import (
+    verificar_login,
+    listar_produtos,
+    cadastrar_produto,
+    atualizar_produto,
+    listar_estoque,
+    salvar_estoque,
+    listar_movimentacoes,
+    listar_categorias,
+    cadastrar_categoria,
+    atualizar_categoria,
+    excluir_categoria,
+    listar_fornecedores,
+    cadastrar_fornecedor,
+    atualizar_fornecedor,
+    excluir_fornecedor,
+    lista_pedidos,
+    listar_anos_pedidos,
+)
+from relatorios import (
+    get_relatorio_operacional,
+    get_relatorio_mensal,
+    get_dashboard_analytics,
+    exportar_operacional_csv,
+    exportar_mensal_csv,
+)
+
+app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def salvar_upload_imagem(campo='image_file'):
+    """Salva arquivo enviado e retorna caminho relativo dentro de static/."""
+    if campo not in request.files:
+        return None
+    file = request.files[campo]
+    if not file or file.filename == '':
+        return None
+    filename = secure_filename(file.filename)
+    destino = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(destino)
+    return 'uploads/' + filename
+
+
 @app.route('/', methods=['GET', 'POST'])
-@app.route('/login.html', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        
         if verificar_login(email, password):
-            
-            return redirect(url_for('index')) 
-        else:
-            return render_template('login.html', error="Email ou senha inválidos!")
-            
+            return redirect(url_for('index'))
+        return render_template('login.html', error="Email ou senha inválidos!")
     return render_template('login.html')
 
-# Rota de Produtos (Responsável por exibir a lista de produtos, tanto para GET quanto para POST)
-@app.route("/index.html", methods=['GET', 'POST'])
+
+@app.route('/index.html')
 def index():
-    # Busca a lista de produtos e pedidos antes de renderizar
-    lista_de_produtos = listar_produtos()
-    lista_de_pedidos = lista_pedidos()
-    lista_de_categorias = listar_categorias()
-    
-    
+    return render_template(
+        'index.html',
+        produtos=listar_produtos(),
+        categorias=listar_categorias(),
+        fornecedores=listar_fornecedores()
+    )
 
-    # Converter status dos produtos 
-    for produto in lista_de_produtos:
-        # Converte o campo status para ativo/inativo
-        status = produto.get('status')
-        produto['status'] = 'ativo' if status else 'inativo'
-        
-        featured = produto.get('featured') or produto.get('destaque') or 0
-        produto['featured'] = 'ativo' if featured else 'inativo'
-        
-        if 'category_id' in produto:
-           produto['category'] = obter_nome_categoria(produto['category_id'])
 
-    # Converter os itens dos pedidos para exibir o nome do produto e calcular o preço total
-    # No seu loop de pedidos no main.py
-    for pedido in lista_de_pedidos:
-        pedido['cliente'] = 'Não informado'
-        pedido['email'] = 'Não informado'
-        pedido['produto'] = ''
-        pedido['total_price'] = 0.0  # Padronizado com o HTML
-        pedido['itens'] = []         # Garante que a chave exista para o tojson não falhar
+@app.route('/produtos', methods=['POST'])
+def produtos_actions():
+    action = request.form.get('action')
+    product_id = request.form.get('id')
+    name = request.form.get('name')
+    description = request.form.get('description')
+    price = request.form.get('price')
+    image_url = request.form.get('image_url')
+    featured = 1 if request.form.get('featured') else 0
+    image_path = salvar_upload_imagem('image_file')
 
-        if pedido.get('user_id') is not None:
-            pedido['cliente'] = obter_nome_cliente(pedido['user_id'])
-            pedido['email'] = obter_email(pedido['user_id'])
+    if action == 'add':
+        cadastrar_produto(name, description, price, image_url, image_path, featured)
+    elif action == 'edit':
+        atualizar_produto(product_id, name, description, price, image_url, image_path, featured)
 
-        # Tenta pegar os itens de qualquer uma das chaves possíveis
-        itens_json = pedido.get('items') or pedido.get('itens')
-        
-        if itens_json:
-            try:
-                # Decodificação se for bytes
-                if isinstance(itens_json, (bytes, bytearray)):
-                    itens_json = itens_json.decode('utf-8')
+    return redirect(url_for('index'))
 
-                # Parse JSON se for string
-                if isinstance(itens_json, str):
-                    itens = json.loads(itens_json)
-                else:
-                    itens = itens_json
 
-                # Normaliza para lista
-                if isinstance(itens, dict):
-                    itens = [itens]
+@app.route('/estoque.html')
+def estoque():
+    return render_template(
+        'estoque.html',
+        estoque=listar_estoque(),
+        produtos=listar_produtos(),
+        categorias=listar_categorias(),
+        fornecedores=listar_fornecedores()
+    )
 
-                if isinstance(itens, list):
-                    # Salva os itens processados na chave que o HTML espera
-                    pedido['itens'] = itens 
-                    
-                    # Gera a string de nomes de produtos
-                    pedido['produto'] = ", ".join(
-                        str(item.get('name') or item.get('nome') or '') 
-                        for item in itens if isinstance(item, dict)
-                    )
-                    
-                    # Calcula o preço total
-                    pedido['total_price'] = sum(
-                        float(item.get('quantity') or item.get('quantidade') or 0) * 
-                        float(item.get('price') or item.get('preco') or 0) 
-                        for item in itens if isinstance(item, dict)
-                    )
-            except Exception as e:
-                print(f"Erro ao processar itens: {e}")
-                pedido['produto'] = "Erro nos dados"
-                pedido['itens'] = []
-                
+
+@app.route('/estoque/salvar', methods=['POST'])
+def estoque_salvar():
+    product_id = request.form.get('product_id')
+    category_id = request.form.get('category_id')
+    supplier_id = request.form.get('supplier_id')
+    quantity = request.form.get('quantity')
+    salvar_estoque(product_id, category_id, supplier_id, quantity)
+    return redirect(url_for('estoque'))
+
+
+@app.route('/categorias.html', methods=['GET', 'POST'])
+def categorias():
     if request.method == 'POST':
-        # 1. Caso seja ALTERNAR STATUS (Botão de ligar/desligar)
-        # 1. Caso seja ALTERNAR STATUS
-        if request.form.get('action') == 'toggle_status':
-            product_id = request.form.get('product_id')
-            # Captura o novo status enviado pelo JS
-            new_status = request.form.get('new_status') 
-            
-            # Agora passamos os DOIS argumentos que a função exige
-            sucesso = editar_status_produto(product_id, new_status) 
-            
-            from flask import jsonify
-            return jsonify({"success": sucesso})
-
-        # 2. Caso seja SALVAR/EDITAR PRODUTO (Botão Confirmar do Modal)
-        elif 'product_id' in request.form:
-            # Usamos .get() para evitar o erro 400 se algum campo vier vazio
-            product_id = request.form.get('product_id')
-            code = request.form.get('code')
-            name = request.form.get('name')
-            description = request.form.get('description', '')
-            price = request.form.get('price', '0')
-            category_id = request.form.get('category_id')
-            image = request.form.get('image', '')
-            stock = request.form.get('stock', '0')
-            slug = request.form.get('slug', '')
-            
-            # Captura o checkbox (no Flask, se não estiver marcado, ele nem aparece no form)
-            featured = 1 if request.form.get('featured') == '1' else 0
-
-            # Validação mínima para não quebrar o banco de dados
-            if not name or not code:
-                return "Erro: Nome e Código são obrigatórios", 400
-
-            atualizar_produto(product_id, code, name, description, price, category_id, image, stock, slug, featured)
-            
-            return redirect(url_for('index'))
+        action = request.form.get('action')
+        category_id = request.form.get('id')
+        name = request.form.get('name')
+        if action == 'add' and name:
+            cadastrar_categoria(name)
+        elif action == 'edit' and category_id and name:
+            atualizar_categoria(category_id, name)
+        elif action == 'delete' and category_id:
+            excluir_categoria(category_id)
+        return redirect(url_for('categorias'))
+    return render_template('categorias.html', categorias=listar_categorias())
 
 
-    
-    #consultar categorias para exibir no dropdown de edição
-    lista_de_categorias = listar_categorias()
-    
-    #ultilizando a função consultar_produto para obter os detalhes do produto para exibir no modal de edição
-    for produto in lista_de_produtos:
-        produto_id = produto.get('id') or produto.get('id')
-        detalhes_produto = consultar_produto(produto_id)
-        if detalhes_produto:
-            produto['details'] = detalhes_produto
-        else:
-            produto['details'] = {}
-            
-    #ultilizando a função cadastrar_produto para cadastrar um novo produto caso os campos de cadastro sejam preenchidos
-    if request.method == 'POST' and 'new_product' in request.form:
-        code = request.form['new_code']
-        name = request.form['new_name']
-        description = request.form['new_description']
-        price = request.form['new_price']
-        category_id = request.form['new_category_id']
-        image = request.form['new_image']
-        stock = request.form['new_stock']
-        slug = request.form['new_slug']
-        featured = 1 if 'new_featured' in request.form else 0
-        
-        cadastrar_produto(code, name, description, price, category_id, image, stock, slug, featured)
-        
-        return redirect(url_for('index'))
-    
-    #detalhes do pedido usando a função detalhes_pedido para exibir no modal de detalhes do pedido e response
+@app.route('/fornecedores.html', methods=['GET', 'POST'])
+def fornecedores():
     if request.method == 'POST':
-            pedido_id_ajax = request.form.get('pedido_id')
-            
-            if pedido_id_ajax:
-                dados = detalhes_pedido(pedido_id_ajax)
-                
-                # Converte a lista/dicionário para string JSON
-                json_string = json.dumps(dados if dados else [], default=str)
-                
-                # Retorna uma Resposta com o corpo JSON e o tipo de conteúdo correto
-                return Response(
-                    response=json_string,
-                    status=200,
-                    mimetype="application/json"
-                )
-    
-    # Verificar se as listas estão vazias e renderizar a página com mensagens de erro apropriadas
-    
-    if not lista_de_produtos:
-        return render_template('index.html', produtos=[], pedidos=lista_de_pedidos, error="Nenhum produto encontrado.")
-    
-    if not lista_de_pedidos:
-        return render_template('index.html', produtos=lista_de_produtos, pedidos=[], error="Nenhum pedido encontrado.")
-    if lista_de_categorias is None:
-        return render_template('index.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, error="Erro ao carregar categorias.")
+        action = request.form.get('action')
+        supplier_id = request.form.get('id')
+        name = request.form.get('name')
+        if action == 'add' and name:
+            cadastrar_fornecedor(name)
+        elif action == 'edit' and supplier_id and name:
+            atualizar_fornecedor(supplier_id, name)
+        elif action == 'delete' and supplier_id:
+            excluir_fornecedor(supplier_id)
+        return redirect(url_for('fornecedores'))
+    return render_template('fornecedores.html', fornecedores=listar_fornecedores())
 
-    
-    return render_template('index.html', produtos=lista_de_produtos, pedidos=lista_de_pedidos, categorias=lista_de_categorias,)
 
-@app.route("/dashboard", methods=['GET'])
-@app.route("/dashboard.html", methods=['GET'])
+@app.route('/movimentacoes.html')
+def movimentacoes():
+    return render_template('movimentacoes.html', movs=listar_movimentacoes())
+
+
+@app.route('/pedidos.html')
+def pedidos():
+    return render_template('pedidos.html', pedidos=lista_pedidos())
+
+
+@app.route('/dashboard.html')
 def dashboard():
-    df_orders, df_products = get_data_from_db()
+    ano = request.args.get('ano', type=int)
+    meses = request.args.getlist('mes', type=int)
+    dados = get_dashboard_analytics(ano=ano, meses=meses)
+    anos = listar_anos_pedidos()
+    ano_selecionado = ano or dados.get('ano')
+    return render_template('dashboard.html', dados=dados, anos=anos, ano_selecionado=ano_selecionado, meses_selecionados=meses)
 
-    # Criar gráficos usando Plotly
-    labels = {
-        'created_at': 'Data do Pedido',
-        'total_price': 'Total (R$)',
-        'date_column': 'Data do Pedido',
-        'category_name': 'Categoria'
+
+@app.route('/relatorio_operacional.html')
+def rel_operacional():
+    filtros = {
+        'data_inicio': request.args.get('data_inicio'),
+        'data_fim': request.args.get('data_fim'),
+        'produto': request.args.get('produto'),
+        'fornecedor': request.args.get('fornecedor'),
+        'categoria': request.args.get('categoria'),
     }
-
-    # Faturamento Total
-    total_faturado = df_orders['total_price'].sum()
-
-    # Quantidade de Pedidos
-    total_pedidos = len(df_orders)
-
-    # Pega o ano e mês atuais automaticamente
-    hoje = datetime.now()
-    ano = hoje.year
-    mes = hoje.month
-
-    # Define o primeiro dia e o último dia dinamicamente
-    data_inicio = f"{ano}-{mes:02d}-01"
-    ultimo_dia = calendar.monthrange(ano, mes)[1]
-    data_fim = f"{ano}-{mes:02d}-{ultimo_dia}"
-
-    # Aplica a filtragem
-    df_filtrado = df_orders[
-        (df_orders['created_at'] >= data_inicio) & 
-        (df_orders['created_at'] <= data_fim)
-    ].copy()
-
-    # Gráfico de Vendas por Data
-    fig_sales = px.bar(
-        df_filtrado,
-        x = 'created_at',
-        y = 'total_price',
-        title = 'Vendas por Data',
-        labels = labels,
-        text_auto = '.2s',
-        color_discrete_sequence = ['#1f77b4'],
-        width = 555,
-        
-    )
-    
-    fig_sales.update_layout(bargap=0.7)  # Ajusta o espaçamento entre as barras
-    
-    fig_sales.update_layout(
-        font=dict(family='Arial, sans-serif', size=13, color='#1e1e28'),
-        xaxis_title="Período",
-        yaxis_title="Faturamento (R$)",
-        template="plotly_white", # Fundo limpo
-        hovermode="x unified"    # Mostra os valores ao passar o mouse na linha
+    pagina = request.args.get('pagina', default=1, type=int)
+    resultado = get_relatorio_operacional(filtros=filtros, pagina=pagina, por_pagina=10)
+    return render_template(
+        'relatorio_operacional.html',
+        dados=resultado['dados'],
+        fornecedores=listar_fornecedores(),
+        categorias=listar_categorias(),
+        totais=resultado['totais'],
+        pagina=resultado['pagina'],
+        total_paginas=resultado['total_paginas'],
+        inicio=resultado['inicio'],
+        fim=resultado['fim'],
+        total_registros=resultado['total_registros'],
     )
 
-    # Para formatar o R$ no eixo Y e nas barras
-    fig_sales.update_traces(texttemplate='R$ %{y:.2f}', textposition='outside')
-    
-    
-    fig_category = px.scatter(
-        df_products, 
-        x='stock',     # You need an X axis for a line chart
-        y='price',    # You need a Y axis for a line chart
-        color='category_name', 
-        title='Relação Preço vs. Estoque por Categoria',
-        labels={'stock': 'Estoque', 'price': 'Preço (R$)', 'category_name': 'Categoria'}
+
+@app.route('/relatorio_mensal.html')
+def rel_mensal():
+    ano = request.args.get('ano', type=int)
+    meses = request.args.getlist('mes', type=int)
+    resultado = get_relatorio_mensal(ano=ano, meses=meses)
+    return render_template(
+        'relatorio_mensal.html',
+        anos=listar_anos_pedidos(),
+        dados=resultado['dados'],
+        totais=resultado['totais'],
+        ano_selecionado=ano or resultado['ano'],
+        meses_selecionados=meses,
     )
-    
-    fig_category.update_layout(
-        font=dict(family='Arial, sans-serif', size=13, color='#1e1e28'),
-        xaxis_title="Estoque", 
-        yaxis_title="Preço (R$)",
-        template="plotly_white",    
-        legend_title="Categoria",
-        height=400,
-        width=550,
-        margin=dict(l=50, r=50, t=50, b=50),
+
+
+@app.route('/exportar_operacional')
+def exportar_operacional():
+    filtros = {
+        'data_inicio': request.args.get('data_inicio'),
+        'data_fim': request.args.get('data_fim'),
+        'produto': request.args.get('produto'),
+        'fornecedor': request.args.get('fornecedor'),
+        'categoria': request.args.get('categoria'),
+    }
+    csv_data = exportar_operacional_csv(filtros)
+    return Response(
+        csv_data,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=relatorio_operacional_sai.csv'}
     )
-    
-    
-    # Chart 2: Distribuição de Status (Pizza)
-    if not df_orders.empty:
-        status_chart = px.pie( 
-                df_orders.groupby('status').size().reset_index(name='count'),
-                names='status',
-                values='count',
-                title='Distribuição de Status dos Pedidos',
-                hole=0.4,
-                color='status',
-                color_discrete_map={
-                    'completed': "rgb(0, 204, 150)",
-                    'pending': "rgb(255, 161, 90)",
-                    'shipped': "rgb(59, 72, 246)",
-                    'canceled': "rgb(239, 68, 68)"
-                },
-                template='plotly_white'
-            )
-    else:
-            status_chart = go.Figure()
-            status_chart.add_annotation(text="Sem dados de pedidos")
-        
-    status_chart.update_layout(
-            font=dict(family='Arial, sans-serif', size=12, color='#1e1e28'),
-            height=400,
-            margin=dict(l=50, r=50, t=50, b=50),
-           
+
+
+@app.route('/exportar_mensal')
+def exportar_mensal():
+    ano = request.args.get('ano', type=int)
+    meses = request.args.getlist('mes', type=int)
+    csv_data = exportar_mensal_csv(ano=ano, meses=meses)
+    return Response(
+        csv_data,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=relatorio_mensal_sai.csv'}
     )
-    
-    
-    
-    if not df_products.empty:
-        # 1. Agrupar, somar quantidades e pegar os 5 maiores
-        top_5_df = df_products.groupby('name')['stock'].sum().nlargest(5).reset_index()
-    
-        # 2. Criar o gráfico de barras horizontais
-        top_products_chart = px.line(
-            top_5_df,
-            x='stock',
-            y='name',
-            orientation='h', # Define como horizontal
-            title='Top 5 Produtos Mais Vendidos',
-            text='stock', # Exibe o valor sobre a barra
-            labels={'stock': 'Estoque', 'name': 'Produto'},
-            template='plotly_white',
-            color_discrete_sequence=["rgb(59, 125, 246)"] # Azul similar ao dashboard
-        )
-        
-        # Ajustar para que a maior barra fique no topo
-        top_products_chart.update_layout(yaxis={'categoryorder': 'total ascending'})
-
-    else:
-        top_products_chart = go.Figure()
-        top_products_chart.add_annotation(text="Sem dados de produtos")
-
-    # Padronização de layout (conforme seu exemplo)
-    top_products_chart.update_layout(
-        font=dict(family='Arial, sans-serif, negrito', size=13, color='#1e1e28'),
-        height=400,
-        width=580,
-        barmode='group',
-        margin=dict(l=50, r=50, t=50, b=50),
-    )
-    
-    # Renderizar o template do dashboard com os gráficos
-    return render_template('dashboard.html', top_products_chart=top_products_chart.to_html(full_html=False), status_chart=status_chart.to_html(full_html=False), fig_sales=fig_sales.to_html(full_html=False), fig_category=fig_category.to_html(full_html=False, include_plotlyjs='cdn'), total_faturado=total_faturado, total_pedidos=total_pedidos )
 
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
