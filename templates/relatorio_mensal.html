@@ -1,14 +1,82 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Relatório Mensal - S.A.I</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script></head>
-<body><div class="container-geral"><aside class="menu-lateral"><div class="logo-area"><i class="fas fa-leaf"></i><h2>S.A.I</h2></div><nav><ul>
-<li class="item-menu"><a href="/index.html"><i class="fas fa-box"></i> Produtos (Geral)</a></li><li class="item-menu"><a href="/estoque.html"><i class="fas fa-warehouse"></i> Controle de Estoque</a></li><li class="item-menu"><a href="/categorias.html"><i class="fas fa-tags"></i> Categorias</a></li><li class="item-menu"><a href="/fornecedores.html"><i class="fas fa-truck"></i> Fornecedores</a></li><li class="item-menu"><a href="/movimentacoes.html"><i class="fas fa-history"></i> Movimentações</a></li><li class="item-menu"><a href="/pedidos.html"><i class="fas fa-shopping-cart"></i> Pedidos</a></li><li class="item-menu"><a href="/dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li><li class="item-menu"><a href="/relatorio_operacional.html"><i class="fas fa-file-invoice-dollar"></i> Rel. Operacional</a></li><li class="item-menu ativo"><a href="/relatorio_mensal.html"><i class="fas fa-calendar-alt"></i> Rel. Mensal</a></li><li class="item-menu"><a href="/"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
-</ul></nav></aside><main class="area-principal">
-<header class="topo-painel"><div><h1>Relatório de Vendas Mensal</h1><p>Resumo por mês com impostos, faturamento bruto e valor líquido.</p></div><a class="btn-adicionar" href="/exportar_mensal?{{ request.query_string.decode() }}"><i class="fas fa-file-csv"></i> Exportar CSV</a></header>
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Mensal - S.A.I</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+</head>
+<body>
+<div class="container-geral">
+    <aside class="menu-lateral">
+        <div class="logo-area">
+            <i class="fas fa-leaf"></i>
+            <h2>S.A.I</h2>
+        </div>
+        <nav>
+            <ul>
+                <li class="item-menu">
+                    <a href="/index.html">
+                        <i class="fas fa-box"></i> Produtos (Geral)
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/estoque.html">
+                        <i class="fas fa-warehouse"></i> Controle de Estoque
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/categorias.html">
+                        <i class="fas fa-tags"></i> Categorias
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/fornecedores.html">
+                        <i class="fas fa-truck"></i> Fornecedores
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/movimentacoes.html">
+                        <i class="fas fa-history"></i> Movimentações
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/pedidos.html">
+                        <i class="fas fa-shopping-cart"></i> Pedidos
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/dashboard.html">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/relatorio_operacional.html">
+                        <i class="fas fa-file-invoice-dollar"></i> Rel. Operacional
+                    </a>
+                </li>
+                <li class="item-menu ativo">
+                    <a href="/relatorio_mensal.html">
+                        <i class="fas fa-calendar-alt"></i> Rel. Mensal
+                    </a>
+                </li>
+                <li class="item-menu">
+                    <a href="/">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="area-principal">
 <section class="relatorio-card"><form method="GET" class="grid-filtros-mensal"><div class="form-group"><label>Ano</label><select name="ano">{% for a in anos %}<option value="{{ a }}" {% if ano_selecionado == a %}selected{% endif %}>{{ a }}</option>{% endfor %}{% if not anos %}<option value="2026">2026</option>{% endif %}</select></div><div class="form-group meses-chip-area"><label>Meses</label><div class="chips-meses">{% set nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'] %}{% for m in range(1,13) %}<label class="chip-mes"><input type="checkbox" name="mes" value="{{ m }}" {% if m in meses_selecionados %}checked{% endif %}> {{ nomes[m-1] }}</label>{% endfor %}</div></div><div class="acoes-filtro"><button class="btn-adicionar" type="submit"><i class="fas fa-filter"></i> Aplicar</button><a class="btn-link-limpar" href="/relatorio_mensal.html">Limpar</a></div></form></section>
 <section class="kpi-grid-projeto2"><article class="kpi-card"><span>Total Bruto</span><strong>R$ {{ "%.2f"|format(totais.total_bruto) }}</strong></article><article class="kpi-card"><span>Total Líquido</span><strong>R$ {{ "%.2f"|format(totais.total_liquido) }}</strong></article><article class="kpi-card"><span>Impostos</span><strong>R$ {{ "%.2f"|format(totais.impostos) }}</strong></article><article class="kpi-card"><span>Itens Vendidos</span><strong>{{ totais.itens }}</strong></article></section>
 <section class="relatorio-card"><h3>Comparativo Mensal</h3><div id="graficoComparativo" style="min-height:390px;"></div></section>
 <section class="relatorio-card"><div class="barra-tabela-projeto2"><div>Detalhamento mensal</div><input type="text" id="buscaTabela" placeholder="Buscar mês..." onkeyup="filtrarTabela()"></div><table id="tabelaMensal"><thead><tr><th onclick="ordenarTabela(0)">Mês</th><th>Pedidos</th><th>Itens</th><th>Bruto</th><th>ICMS</th><th>PIS</th><th>COFINS</th><th>Impostos</th><th>Líquido</th><th>Margem</th></tr></thead><tbody>{% for r in dados %}<tr><td>{{ r.mes }}</td><td>{{ r.qtd_pedidos }}</td><td>{{ r.itens }}</td><td>R$ {{ "%.2f"|format(r.valor_bruto) }}</td><td>R$ {{ "%.2f"|format(r.icms) }}</td><td>R$ {{ "%.2f"|format(r.pis) }}</td><td>R$ {{ "%.2f"|format(r.cofins) }}</td><td>R$ {{ "%.2f"|format(r.impostos) }}</td><td>R$ {{ "%.2f"|format(r.valor_liquido) }}</td><td>{{ "%.2f"|format(r.margem_liquida) }}%</td></tr>{% else %}<tr><td colspan="10" style="text-align:center;padding:30px;">Nenhum registro encontrado.</td></tr>{% endfor %}</tbody></table></section>
 </main></div><script>
-const meses={{ dados|map(attribute='mes')|list|tojson }};const bruto={{ dados|map(attribute='valor_bruto')|list|tojson }};const liquido={{ dados|map(attribute='valor_liquido')|list|tojson }};const impostos={{ dados|map(attribute='impostos')|list|tojson }};Plotly.newPlot('graficoComparativo',[{x:meses,y:bruto,type:'bar',name:'Bruto',marker:{color:'#6b8e6b'}},{x:meses,y:liquido,type:'bar',name:'Líquido',marker:{color:'#a3b18a'}},{x:meses,y:impostos,type:'scatter',mode:'lines+markers',name:'Impostos',line:{color:'#eab308',width:3}}],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Inter, Arial',color:'#2d312d'},hovermode:'x unified',barmode:'group',margin:{l:45,r:20,t:30,b:45}},{responsive:true,displaylogo:false});function filtrarTabela(){const t=document.getElementById('buscaTabela').value.toLowerCase();document.querySelectorAll('#tabelaMensal tbody tr').forEach(tr=>tr.style.display=tr.innerText.toLowerCase().includes(t)?'':'none')}function ordenarTabela(n){const tb=document.getElementById('tabelaMensal').tBodies[0];Array.from(tb.rows).sort((a,b)=>a.cells[n].innerText.localeCompare(b.cells[n].innerText,'pt-BR',{numeric:true})).forEach(r=>tb.appendChild(r));}
+const meses={{dados|map(attribute='mes')|list|tojson }};const bruto={{ dados|map(attribute='valor_bruto')|list|tojson }};const liquido={{ dados|map(attribute='valor_liquido')|list|tojson }};const impostos={{ dados|map(attribute='impostos')|list|tojson }};Plotly.newPlot('graficoComparativo',[{x:meses,y:bruto,type:'bar',name:'Bruto',marker:{color:'#6b8e6b'}},{x:meses,y:liquido,type:'bar',name:'Líquido',marker:{color:'#a3b18a'}},{x:meses,y:impostos,type:'scatter',mode:'lines+markers',name:'Impostos',line:{color:'#eab308',width:3}}],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Inter, Arial',color:'#2d312d'},hovermode:'x unified',barmode:'group',margin:{l:45,r:20,t:30,b:45}},{responsive:true,displaylogo:false});function filtrarTabela(){const t=document.getElementById('buscaTabela').value.toLowerCase();document.querySelectorAll('#tabelaMensal tbody tr').forEach(tr=>tr.style.display=tr.innerText.toLowerCase().includes(t)?'':'none')}function ordenarTabela(n){const tb=document.getElementById('tabelaMensal').tBodies[0];Array.from(tb.rows).sort((a,b)=>a.cells[n].innerText.localeCompare(b.cells[n].innerText,'pt-BR',{numeric:true})).forEach(r=>tb.appendChild(r));}
 </script><script src="{{ url_for('static', filename='acessibilidade.js') }}"></script><style>.relatorio-card,.kpi-card{background:var(--fundo-card);border:1px solid var(--cor-borda);border-radius:18px;padding:24px;box-shadow:0 10px 35px rgba(0,0,0,.06);margin-bottom:24px}.grid-filtros-mensal{display:grid;grid-template-columns:220px 1fr 220px;gap:20px;align-items:end}.chips-meses{display:flex;gap:8px;flex-wrap:wrap}.chip-mes{background:#eef2e7;border:1px solid var(--cor-borda);border-radius:999px;padding:8px 12px;font-weight:600}.kpi-grid-projeto2{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.kpi-card span{display:block;color:var(--cor-texto-mutado);font-weight:600}.kpi-card strong{font-size:1.5rem}.barra-tabela-projeto2{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.btn-link-limpar{font-weight:700;color:var(--cor-principal);text-decoration:none}@media(max-width:1000px){.grid-filtros-mensal,.kpi-grid-projeto2{grid-template-columns:1fr}}</style></body></html>
