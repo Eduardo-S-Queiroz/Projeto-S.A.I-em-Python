@@ -77,6 +77,166 @@
 <section class="kpi-grid-projeto2"><article class="kpi-card"><span>Total Bruto</span><strong>R$ {{ "%.2f"|format(totais.total_bruto) }}</strong></article><article class="kpi-card"><span>Total Líquido</span><strong>R$ {{ "%.2f"|format(totais.total_liquido) }}</strong></article><article class="kpi-card"><span>Impostos</span><strong>R$ {{ "%.2f"|format(totais.impostos) }}</strong></article><article class="kpi-card"><span>Itens Vendidos</span><strong>{{ totais.itens }}</strong></article></section>
 <section class="relatorio-card"><h3>Comparativo Mensal</h3><div id="graficoComparativo" style="min-height:390px;"></div></section>
 <section class="relatorio-card"><div class="barra-tabela-projeto2"><div>Detalhamento mensal</div><input type="text" id="buscaTabela" placeholder="Buscar mês..." onkeyup="filtrarTabela()"></div><table id="tabelaMensal"><thead><tr><th onclick="ordenarTabela(0)">Mês</th><th>Pedidos</th><th>Itens</th><th>Bruto</th><th>ICMS</th><th>PIS</th><th>COFINS</th><th>Impostos</th><th>Líquido</th><th>Margem</th></tr></thead><tbody>{% for r in dados %}<tr><td>{{ r.mes }}</td><td>{{ r.qtd_pedidos }}</td><td>{{ r.itens }}</td><td>R$ {{ "%.2f"|format(r.valor_bruto) }}</td><td>R$ {{ "%.2f"|format(r.icms) }}</td><td>R$ {{ "%.2f"|format(r.pis) }}</td><td>R$ {{ "%.2f"|format(r.cofins) }}</td><td>R$ {{ "%.2f"|format(r.impostos) }}</td><td>R$ {{ "%.2f"|format(r.valor_liquido) }}</td><td>{{ "%.2f"|format(r.margem_liquida) }}%</td></tr>{% else %}<tr><td colspan="10" style="text-align:center;padding:30px;">Nenhum registro encontrado.</td></tr>{% endfor %}</tbody></table></section>
-</main></div><script>
-const meses={{dados|map(attribute='mes')|list|tojson }};const bruto={{ dados|map(attribute='valor_bruto')|list|tojson }};const liquido={{ dados|map(attribute='valor_liquido')|list|tojson }};const impostos={{ dados|map(attribute='impostos')|list|tojson }};Plotly.newPlot('graficoComparativo',[{x:meses,y:bruto,type:'bar',name:'Bruto',marker:{color:'#6b8e6b'}},{x:meses,y:liquido,type:'bar',name:'Líquido',marker:{color:'#a3b18a'}},{x:meses,y:impostos,type:'scatter',mode:'lines+markers',name:'Impostos',line:{color:'#eab308',width:3}}],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'Inter, Arial',color:'#2d312d'},hovermode:'x unified',barmode:'group',margin:{l:45,r:20,t:30,b:45}},{responsive:true,displaylogo:false});function filtrarTabela(){const t=document.getElementById('buscaTabela').value.toLowerCase();document.querySelectorAll('#tabelaMensal tbody tr').forEach(tr=>tr.style.display=tr.innerText.toLowerCase().includes(t)?'':'none')}function ordenarTabela(n){const tb=document.getElementById('tabelaMensal').tBodies[0];Array.from(tb.rows).sort((a,b)=>a.cells[n].innerText.localeCompare(b.cells[n].innerText,'pt-BR',{numeric:true})).forEach(r=>tb.appendChild(r));}
-</script><script src="{{ url_for('static', filename='acessibilidade.js') }}"></script><style>.relatorio-card,.kpi-card{background:var(--fundo-card);border:1px solid var(--cor-borda);border-radius:18px;padding:24px;box-shadow:0 10px 35px rgba(0,0,0,.06);margin-bottom:24px}.grid-filtros-mensal{display:grid;grid-template-columns:220px 1fr 220px;gap:20px;align-items:end}.chips-meses{display:flex;gap:8px;flex-wrap:wrap}.chip-mes{background:#eef2e7;border:1px solid var(--cor-borda);border-radius:999px;padding:8px 12px;font-weight:600}.kpi-grid-projeto2{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.kpi-card span{display:block;color:var(--cor-texto-mutado);font-weight:600}.kpi-card strong{font-size:1.5rem}.barra-tabela-projeto2{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.btn-link-limpar{font-weight:700;color:var(--cor-principal);text-decoration:none}@media(max-width:1000px){.grid-filtros-mensal,.kpi-grid-projeto2{grid-template-columns:1fr}}</style></body></html>
+</main></div>
+<script>
+    // ==========================================
+// 1. CARREGAMENTO DOS DADOS (Jinja2)
+// ==========================================
+const meses = {{ dados | map(attribute = 'mes') | list | tojson }};
+const bruto = {{ dados | map(attribute = 'valor_bruto') | list | tojson }};
+const liquido = {{ dados | map(attribute = 'valor_liquido') | list | tojson }};
+const impostos = {{ dados | map(attribute = 'impostos') | list | tojson }};
+
+// ==========================================
+// 2. CONFIGURAÇÃO E RENDERIZAÇÃO DO GRÁFICO
+// ==========================================
+const dataPlot = [
+  {
+    x: meses,
+    y: bruto,
+    type: 'bar',
+    name: 'Bruto',
+    marker: { color: '#6b8e6b' }
+  },
+  {
+    x: meses,
+    y: liquido,
+    type: 'bar',
+    name: 'Líquido',
+    marker: { color: '#a3b18a' }
+  },
+  {
+    x: meses,
+    y: impostos,
+    type: 'scatter',
+    mode: 'lines+markers',
+    name: 'Impostos',
+    line: { color: '#eab308', width: 3 }
+  }
+];
+
+const layoutPlot = {
+  paper_bgcolor: 'rgba(0,0,0,0)',
+  plot_bgcolor: 'rgba(0,0,0,0)',
+  font: { family: 'Inter, Arial', color: '#2d312d' },
+  hovermode: 'x unified',
+  barmode: 'group',
+  margin: { l: 45, r: 20, t: 30, b: 45 }
+};
+
+const configPlot = {
+  responsive: true,
+  displaylogo: false
+};
+
+Plotly.newPlot('graficoComparativo', dataPlot, layoutPlot, configPlot);
+
+// ==========================================
+// 3. FUNÇÕES DE MANIPULAÇÃO DA TABELA
+// ==========================================
+
+/**
+ * Filtra as linhas da tabela com base no termo digitado na busca.
+ */
+function filtrarTabela() {
+  const filtro = document.getElementById('buscaTTabela').value.toLowerCase();
+  const linhas = document.querySelectorAll('#tabelaMensal tbody tr');
+
+  linhas.forEach(linha => {
+    const textoLinha = linha.innerText.toLowerCase();
+    linha.style.display = textoLinha.includes(filtro) ? '' : 'none';
+  });
+}
+
+/**
+ * Ordena as linhas da tabela de forma crescente com base na coluna clicada.
+ * @param {number} indiceColuna - O índice da coluna a ser ordenada.
+ */
+function ordenarTabela(indiceColuna) {
+  const tabelaCorpo = document.getElementById('tabelaMensal').tBodies[0];
+  const linhasArray = Array.from(tabelaCorpo.rows);
+
+  linhasArray.sort((linhaA, linhaB) => {
+    const textoA = linhaA.cells[indiceColuna].innerText;
+    const textoB = linhaB.cells[indiceColuna].innerText;
+
+    return textoA.localeCompare(textoB, 'pt-BR', { numeric: true });
+  });
+
+  // Reordena os elementos visualmente no DOM
+  linhasArray.forEach(linha => tabelaCorpo.appendChild(linha));
+}
+</script>
+<script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
+<style>
+    .relatorio-card,
+    .kpi-card {
+        background: var(--fundo-card);
+        border: 1px solid var(--cor-borda);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 10px 35px rgba(0, 0, 0, .06);
+        margin-bottom: 24px
+    }
+
+    .grid-filtros-mensal {
+        display: grid;
+        grid-template-columns: 220px 1fr 220px;
+        gap: 20px;
+        align-items: end
+    }
+
+    .chips-meses {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap
+    }
+
+    .chip-mes {
+        background: #eef2e7;
+        border: 1px solid var(--cor-borda);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-weight: 600
+    }
+
+    .kpi-grid-projeto2 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px
+    }
+
+    .kpi-card span {
+        display: block;
+        color: var(--cor-texto-mutado);
+        font-weight: 600
+    }
+
+    .kpi-card strong {
+        font-size: 1.5rem
+    }
+
+    .barra-tabela-projeto2 {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px
+    }
+
+    .btn-link-limpar {
+        font-weight: 700;
+        color: var(--cor-principal);
+        text-decoration: none
+    }
+
+    @media(max-width:1000px) {
+
+        .grid-filtros-mensal,
+        .kpi-grid-projeto2 {
+            grid-template-columns: 1fr
+        }
+    }
+</style>
+</body>
+
+</html>

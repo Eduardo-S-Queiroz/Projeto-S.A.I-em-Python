@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,23 +9,31 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.png') }}">
 </head>
-<body>    
+
+<body>
     <div class="container-geral">
         <aside class="menu-lateral">
             <div class="logo-area">
-                <i class="fas fa-leaf"></i> <h2>S.A.I</h2>
+                <i class="fas fa-leaf"></i>
+                <h2>S.A.I</h2>
             </div>
             <nav>
                 <ul>
                     <li class="item-menu"><a href="/index.html"><i class="fas fa-box"></i> Produtos (Geral)</a></li>
-                    <li class="item-menu"><a href="/estoque.html"><i class="fas fa-warehouse"></i> Controle de Estoque</a></li>
+                    <li class="item-menu"><a href="/estoque.html"><i class="fas fa-warehouse"></i> Controle de
+                            Estoque</a></li>
                     <li class="item-menu"><a href="/categorias.html"><i class="fas fa-tags"></i> Categorias</a></li>
-                    <li class="item-menu"><a href="/fornecedores.html"><i class="fas fa-truck"></i> Fornecedores</a></li>
-                    <li class="item-menu"><a href="/movimentacoes.html"><i class="fas fa-history"></i> Movimentações</a></li>
-                    <li class="item-menu ativo"><a href="/pedidos.html"><i class="fas fa-shopping-cart"></i> Pedidos</a></li>
+                    <li class="item-menu"><a href="/fornecedores.html"><i class="fas fa-truck"></i> Fornecedores</a>
+                    </li>
+                    <li class="item-menu"><a href="/movimentacoes.html"><i class="fas fa-history"></i> Movimentações</a>
+                    </li>
+                    <li class="item-menu ativo"><a href="/pedidos.html"><i class="fas fa-shopping-cart"></i> Pedidos</a>
+                    </li>
                     <li class="item-menu"><a href="/dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li class="item-menu"><a href="/relatorio_operacional.html"><i class="fas fa-file-invoice-dollar"></i> Rel. Operacional</a></li>
-                    <li class="item-menu"><a href="/relatorio_mensal.html"><i class="fas fa-calendar-alt"></i> Rel. Mensal</a></li>
+                    <li class="item-menu"><a href="/relatorio_operacional.html"><i
+                                class="fas fa-file-invoice-dollar"></i> Rel. Operacional</a></li>
+                    <li class="item-menu"><a href="/relatorio_mensal.html"><i class="fas fa-calendar-alt"></i> Rel.
+                            Mensal</a></li>
                     <li class="item-menu"><a href="/"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                 </ul>
             </nav>
@@ -36,6 +45,10 @@
                     <h1>Gerenciamento de Pedidos</h1>
                     <p>Histórico de vendas e faturamento.</p>
                 </div>
+                <form class="header-search" method="GET" action="" role="search">
+                    <input type="search" name="q" placeholder="Pesquisar pedidos..." aria-label="Pesquisar">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </form>
             </header>
 
             <section class="secao-card">
@@ -64,7 +77,18 @@
             </section>
         </main>
     </div>
-<script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
-<style>.badge-entrada{color:#15803d;font-weight:800}.badge-saida{color:#dc2626;font-weight:800}</style>
+    <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
+    <style>
+        .badge-entrada {
+            color: #15803d;
+            font-weight: 800
+        }
+
+        .badge-saida {
+            color: #dc2626;
+            font-weight: 800
+        }
+    </style>
 </body>
+
 </html>

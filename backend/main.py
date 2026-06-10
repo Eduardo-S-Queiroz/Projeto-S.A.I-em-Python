@@ -46,6 +46,37 @@ app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
+def _filtrar_lista_por_q(items, campos, q):
+    """Filtra uma lista de dicionários por termos em `q` (case-insensitive).
+
+    - items: lista de dicts
+    - campos: lista de chaves a checar no dict
+    - q: string de busca
+    Retorna a lista filtrada (se q vazio, retorna original).
+    """
+    if not q:
+        return items
+    ql = q.strip().lower()
+    def matches(item):
+        for c in campos:
+            v = item.get(c) if isinstance(item, dict) else None
+            if v is None:
+                # tenta atributos de objetos (caso retornos não sejam dicts)
+                try:
+                    v = getattr(item, c)
+                except Exception:
+                    v = None
+            if v is None:
+                continue
+            try:
+                if ql in str(v).lower():
+                    return True
+            except Exception:
+                continue
+        return False
+    return [it for it in items if matches(it)]
+
+
 def salvar_upload_imagem(campo='image_file'):
     """Salva arquivo enviado e retorna caminho relativo dentro de static/."""
     if campo not in request.files:
@@ -72,11 +103,21 @@ def login():
 
 @app.route('/index.html')
 def index():
+    q = request.args.get('q', default='')
+    produtos = listar_produtos()
+    categorias = listar_categorias()
+    fornecedores = listar_fornecedores()
+
+    if q:
+        produtos = _filtrar_lista_por_q(produtos, ['name', 'description'], q)
+        categorias = _filtrar_lista_por_q(categorias, ['name'], q)
+        fornecedores = _filtrar_lista_por_q(fornecedores, ['name'], q)
+
     return render_template(
         'index.html',
-        produtos=listar_produtos(),
-        categorias=listar_categorias(),
-        fornecedores=listar_fornecedores()
+        produtos=produtos,
+        categorias=categorias,
+        fornecedores=fornecedores
     )
 
 
@@ -101,22 +142,32 @@ def produtos_actions():
 
 @app.route('/estoque.html')
 def estoque():
+    q = request.args.get('q', default='')
+    estoque_list = listar_estoque()
+    produtos = listar_produtos()
+    categorias = listar_categorias()
+    fornecedores = listar_fornecedores()
+
+    if q:
+        estoque_list = _filtrar_lista_por_q(estoque_list, ['product_name', 'category_name', 'supplier_name'], q)
+
     return render_template(
         'estoque.html',
-        estoque=listar_estoque(),
-        produtos=listar_produtos(),
-        categorias=listar_categorias(),
-        fornecedores=listar_fornecedores()
+        estoque=estoque_list,
+        produtos=produtos,
+        categorias=categorias,
+        fornecedores=fornecedores
     )
 
 
 @app.route('/estoque/salvar', methods=['POST'])
 def estoque_salvar():
-    product_id = request.form.get('product_id')
+    inventory_id = request.form.get('inventory_id')
+    product_id = request.form.get('product_id') or request.form.get('original_product_id')
     category_id = request.form.get('category_id')
     supplier_id = request.form.get('supplier_id')
     quantity = request.form.get('quantity')
-    salvar_estoque(product_id, category_id, supplier_id, quantity)
+    salvar_estoque(product_id, category_id, supplier_id, quantity, inventory_id=inventory_id)
     return redirect(url_for('estoque'))
 
 
@@ -133,7 +184,11 @@ def categorias():
         elif action == 'delete' and category_id:
             excluir_categoria(category_id)
         return redirect(url_for('categorias'))
-    return render_template('categorias.html', categorias=listar_categorias())
+    q = request.args.get('q', default='')
+    categorias_list = listar_categorias()
+    if q:
+        categorias_list = _filtrar_lista_por_q(categorias_list, ['name'], q)
+    return render_template('categorias.html', categorias=categorias_list)
 
 
 @app.route('/fornecedores.html', methods=['GET', 'POST'])
@@ -149,17 +204,29 @@ def fornecedores():
         elif action == 'delete' and supplier_id:
             excluir_fornecedor(supplier_id)
         return redirect(url_for('fornecedores'))
-    return render_template('fornecedores.html', fornecedores=listar_fornecedores())
+    q = request.args.get('q', default='')
+    fornecedores_list = listar_fornecedores()
+    if q:
+        fornecedores_list = _filtrar_lista_por_q(fornecedores_list, ['name'], q)
+    return render_template('fornecedores.html', fornecedores=fornecedores_list)
 
 
 @app.route('/movimentacoes.html')
 def movimentacoes():
-    return render_template('movimentacoes.html', movs=listar_movimentacoes())
+    q = request.args.get('q', default='')
+    movs = listar_movimentacoes()
+    if q:
+        movs = _filtrar_lista_por_q(movs, ['product_name', 'category_name', 'supplier_name', 'reason', 'type'], q)
+    return render_template('movimentacoes.html', movs=movs)
 
 
 @app.route('/pedidos.html')
 def pedidos():
-    return render_template('pedidos.html', pedidos=lista_pedidos())
+    q = request.args.get('q', default='')
+    pedidos_list = lista_pedidos()
+    if q:
+        pedidos_list = _filtrar_lista_por_q(pedidos_list, ['cliente', 'id', 'status'], q)
+    return render_template('pedidos.html', pedidos=pedidos_list)
 
 
 @app.route('/dashboard.html')

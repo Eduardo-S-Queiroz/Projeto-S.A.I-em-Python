@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,21 +11,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <div class="container-geral">
         <aside class="menu-lateral">
-            <div class="logo-area"><i class="fas fa-leaf"></i><h2>S.A.I</h2></div>
+            <div class="logo-area"><i class="fas fa-leaf"></i>
+                <h2>S.A.I</h2>
+            </div>
             <nav>
                 <ul>
-                    <li class="item-menu ativo"><a href="/index.html"><i class="fas fa-box"></i> Produtos (Geral)</a></li>
-                    <li class="item-menu"><a href="/estoque.html"><i class="fas fa-warehouse"></i> Controle de Estoque</a></li>
+                    <li class="item-menu ativo"><a href="/index.html"><i class="fas fa-box"></i> Produtos (Geral)</a>
+                    </li>
+                    <li class="item-menu"><a href="/estoque.html"><i class="fas fa-warehouse"></i> Controle de
+                            Estoque</a></li>
                     <li class="item-menu"><a href="/categorias.html"><i class="fas fa-tags"></i> Categorias</a></li>
-                    <li class="item-menu"><a href="/fornecedores.html"><i class="fas fa-truck"></i> Fornecedores</a></li>
-                    <li class="item-menu"><a href="/movimentacoes.html"><i class="fas fa-history"></i> Movimentações</a></li>
+                    <li class="item-menu"><a href="/fornecedores.html"><i class="fas fa-truck"></i> Fornecedores</a>
+                    </li>
+                    <li class="item-menu"><a href="/movimentacoes.html"><i class="fas fa-history"></i> Movimentações</a>
+                    </li>
                     <li class="item-menu"><a href="/pedidos.html"><i class="fas fa-shopping-cart"></i> Pedidos</a></li>
                     <li class="item-menu"><a href="/dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li class="item-menu"><a href="/relatorio_operacional.html"><i class="fas fa-file-invoice-dollar"></i> Rel. Operacional</a></li>
-                    <li class="item-menu"><a href="/relatorio_mensal.html"><i class="fas fa-calendar-alt"></i> Rel. Mensal</a></li>
+                    <li class="item-menu"><a href="/relatorio_operacional.html"><i
+                                class="fas fa-file-invoice-dollar"></i> Rel. Operacional</a></li>
+                    <li class="item-menu"><a href="/relatorio_mensal.html"><i class="fas fa-calendar-alt"></i> Rel.
+                            Mensal</a></li>
                     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.png') }}">
                     <li class="item-menu"><a href="/"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                 </ul>
@@ -37,6 +47,10 @@
                     <h1>Gerenciamento de Produtos</h1>
                     <p>Controle a vitrine do e-commerce de chás: aparência, descrição, preço e imagem.</p>
                 </div>
+                <form class="header-search" method="GET" action="" role="search">
+                    <input type="search" name="q" placeholder="Pesquisar produtos..." aria-label="Pesquisar">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </form>
                 <button class="btn-adicionar" type="button" onclick="abrirModalProduto()">+ Novo Produto</button>
             </header>
 
@@ -57,31 +71,37 @@
                         <tr>
                             <td>
                                 {% if produto.image_url %}
-                                    <img src="{{ produto.image_url }}" alt="{{ produto.name }}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;">
+                                <img src="{{ produto.image_url }}" alt="{{ produto.name }}"
+                                    style="width:56px;height:56px;border-radius:10px;object-fit:cover;">
                                 {% elif produto.image_path %}
-                                    <img src="{{ url_for('static', filename=produto.image_path) }}" alt="{{ produto.name }}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;">
+                                <img src="{{ url_for('static', filename=produto.image_path) }}" alt="{{ produto.name }}"
+                                    style="width:56px;height:56px;border-radius:10px;object-fit:cover;">
                                 {% else %}
-                                    <div style="width:56px;height:56px;background:#eee;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-image"></i></div>
+                                <div
+                                    style="width:56px;height:56px;background:#eee;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-image"></i></div>
                                 {% endif %}
                             </td>
                             <td><strong>{{ produto.name }}</strong></td>
-                            <td>{{ (produto.description or '')[:90] }}{% if produto.description and produto.description|length > 90 %}...{% endif %}</td>
+                            <td>{{ (produto.description or '')[:90] }}{% if produto.description and
+                                produto.description|length > 90 %}...{% endif %}</td>
                             <td>R$ {{ "%.2f" | format(produto.price | float) }}</td>
-                            <td><span class="status {{ 'ativo' if produto.featured else 'inativo' }}">{{ 'Sim' if produto.featured else 'Não' }}</span></td>
+                            <td><span class="status {{ 'ativo' if produto.featured else 'inativo' }}">{{ 'Sim' if
+                                    produto.featured else 'Não' }}</span></td>
                             <td>
                                 <button type="button" class="btn-acao btn-editar js-editar-produto"
-                                    data-id="{{ produto.id }}"
-                                    data-name="{{ produto.name|e }}"
+                                    data-id="{{ produto.id }}" data-name="{{ produto.name|e }}"
                                     data-description="{{ (produto.description or '')|e }}"
-                                    data-price="{{ produto.price }}"
-                                    data-image-url="{{ (produto.image_url or '')|e }}"
+                                    data-price="{{ produto.price }}" data-image-url="{{ (produto.image_url or '')|e }}"
                                     data-featured="{{ 1 if produto.featured else 0 }}">
                                     <i class="fas fa-edit"></i> Editar
                                 </button>
                             </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="6" style="text-align:center;padding:30px;">Nenhum produto cadastrado.</td></tr>
+                        <tr>
+                            <td colspan="6" style="text-align:center;padding:30px;">Nenhum produto cadastrado.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -153,4 +173,5 @@
     </script>
     <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
 </body>
+
 </html>

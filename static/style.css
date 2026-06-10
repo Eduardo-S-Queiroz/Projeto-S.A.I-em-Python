@@ -195,3 +195,9 @@ body.dark-mode .caixa-acessibilidade-flutuante {
 .cabecalho { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .cabecalho h1 { font-size: 2rem; color: var(--cor-texto-principal); }
 .conteudo { width: 100%; }
+
+/* Barra de pesquisa no cabeçalho */
+.header-search{display:flex;align-items:center;gap:8px}
+.header-search input[type="search"]{padding:8px 10px;border:1px solid var(--cor-borda);border-radius:8px;background:#fff;color:var(--cor-texto-principal);min-width:180px}
+.header-search button{background:transparent;border:none;cursor:pointer;color:var(--cor-texto-mutado);font-size:1rem;padding:6px}
+.header-search input[type="search"]:focus{outline:2px solid rgba(107,142,107,0.2)}

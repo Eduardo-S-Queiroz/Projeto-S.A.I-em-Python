@@ -159,27 +159,34 @@ def listar_estoque():
         return []
 
 
-def salvar_estoque(product_id, category_id, supplier_id, quantity):
+def salvar_estoque(product_id, category_id, supplier_id, quantity, inventory_id=None):
     conn = conectar_bd()
     if not conn:
         return False
     try:
         quantity = int(quantity or 0)
         cursor = conn.cursor()
-        cursor.execute("SELECT id, quantity FROM inventory WHERE product_id = %s", (product_id,))
+        inventory_query = "SELECT id, quantity, product_id FROM inventory WHERE product_id = %s"
+        inventory_params = (product_id,)
+        if inventory_id:
+            inventory_query = "SELECT id, quantity, product_id FROM inventory WHERE id = %s"
+            inventory_params = (inventory_id,)
+        cursor.execute(inventory_query, inventory_params)
         res = cursor.fetchone()
         if res:
+            inventory_row_id = res[0]
             old_qty = int(res[1] or 0)
+            current_product_id = res[2]
             cursor.execute(
-                "UPDATE inventory SET category_id=%s, supplier_id=%s, quantity=%s WHERE product_id=%s",
-                (category_id or None, supplier_id or None, quantity, product_id)
+                "UPDATE inventory SET category_id=%s, supplier_id=%s, quantity=%s WHERE id=%s",
+                (category_id or None, supplier_id or None, quantity, inventory_row_id)
             )
             if quantity != old_qty:
                 m_type = 'entry' if quantity > old_qty else 'exit'
                 m_qty = abs(quantity - old_qty)
                 cursor.execute(
                     "INSERT INTO stock_movements (product_id, type, quantity, reason) VALUES (%s, %s, %s, %s)",
-                    (product_id, m_type, m_qty, "Ajuste manual de estoque")
+                    (current_product_id, m_type, m_qty, "Ajuste manual de estoque")
                 )
         else:
             cursor.execute(
