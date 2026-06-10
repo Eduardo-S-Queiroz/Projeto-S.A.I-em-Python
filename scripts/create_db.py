@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS stock_movements (
     type ENUM('entry', 'exit') NOT NULL,
     quantity INT NOT NULL,
     reason VARCHAR(255),
+    movement_category VARCHAR(100),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
@@ -106,6 +107,9 @@ ALTER TABLE products ADD CONSTRAINT fk_products_supplier FOREIGN KEY (supplier_i
 
 -- 10. Adicionar campo de endereço de entrega aos pedidos
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address VARCHAR(500) NULL;
+
+-- 11. Adicionar categorização de movimentações de estoque
+ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS movement_category VARCHAR(100) NULL;
 
 -- (O restante das inserções de dados e truncates foram omitidos nesta execução para evitar sobrescrita acidental.)
 """

@@ -185,8 +185,8 @@ def salvar_estoque(product_id, category_id, supplier_id, quantity, inventory_id=
                 m_type = 'entry' if quantity > old_qty else 'exit'
                 m_qty = abs(quantity - old_qty)
                 cursor.execute(
-                    "INSERT INTO stock_movements (product_id, type, quantity, reason) VALUES (%s, %s, %s, %s)",
-                    (current_product_id, m_type, m_qty, "Ajuste manual de estoque")
+                    "INSERT INTO stock_movements (product_id, type, quantity, reason, movement_category) VALUES (%s, %s, %s, %s, %s)",
+                    (current_product_id, m_type, m_qty, "Ajuste manual de estoque", "Ajuste Manual")
                 )
         else:
             cursor.execute(
@@ -195,8 +195,8 @@ def salvar_estoque(product_id, category_id, supplier_id, quantity, inventory_id=
             )
             if quantity > 0:
                 cursor.execute(
-                    "INSERT INTO stock_movements (product_id, type, quantity, reason) VALUES (%s, %s, %s, %s)",
-                    (product_id, 'entry', quantity, "Saldo inicial")
+                    "INSERT INTO stock_movements (product_id, type, quantity, reason, movement_category) VALUES (%s, %s, %s, %s, %s)",
+                    (product_id, 'entry', quantity, "Saldo inicial", "Saldo Inicial")
                 )
         conn.commit()
         cursor.close()
@@ -439,8 +439,8 @@ def registrar_saida_estoque_pedido(order_id, cursor=None, conn=None):
                 )
 
             cursor.execute(
-                "INSERT INTO stock_movements (product_id, type, quantity, reason) VALUES (%s, %s, %s, %s)",
-                (product_id, 'exit', quantity, f'Pedido #{order_id}')
+                "INSERT INTO stock_movements (product_id, type, quantity, reason, movement_category) VALUES (%s, %s, %s, %s, %s)",
+                (product_id, 'exit', quantity, f'Pedido #{order_id}', 'Pedido E-commerce')
             )
 
         if own_connection:
@@ -513,7 +513,36 @@ def backfill_saida_estoque_pedidos():
     finally:
         # Garante o fechamento seguro dos recursos, mesmo se ocorrer algum erro
         cursor.close()
-        conn.close()        
+        conn.close()
+
+
+def atualizar_categoria_movimentacoes():
+    """Atualiza as movimentações de pedidos existentes com categoria 'Pedido E-commerce'."""
+    conn = conectar_bd()
+    if not conn:
+        print("Erro: Não foi possível conectar ao banco de dados.")
+        return 0
+    cursor = conn.cursor()
+    try:
+        # Atualizar movimentações que começam com 'Pedido #' e não têm categoria
+        cursor.execute(
+            "UPDATE stock_movements SET movement_category = 'Pedido E-commerce' WHERE reason LIKE 'Pedido #%' AND movement_category IS NULL"
+        )
+        conn.commit()
+        updated = cursor.rowcount
+        print(f"Categoria atualizada para {updated} movimentações de pedidos.")
+        return updated
+    except mysql.connector.Error as err:
+        print(f"Erro ao atualizar categoria de movimentações: {err}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return 0
+    finally:
+        cursor.close()
+        conn.close()
+
         
 def obter_detalhes_pedido(pedido_id):
     """Obtém detalhes completos de um pedido específico com seus itens."""
