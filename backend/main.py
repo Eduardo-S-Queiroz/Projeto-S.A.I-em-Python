@@ -232,21 +232,23 @@ def pedidos():
 
 @app.route('/pedido/<int:pedido_id>/detalhes')
 def pedido_detalhes(pedido_id):
-    """Retorna os detalhes de um pedido em formato JSON."""
     from flask import jsonify
     
     resultado = obter_detalhes_pedido(pedido_id)
     
     if not resultado:
-        return jsonify({
-            'success': False,
-            'message': 'Pedido não encontrado'
-        }), 404
+        return jsonify({'success': False, 'message': 'Pedido não encontrado'}), 404
     
     pedido = resultado['pedido']
     itens = resultado['itens']
     
-    # Calcular total
+    
+    print("\n" + "="*40)
+    print(f"DEBUG: Buscando itens para o pedido ID: {pedido_id}")
+    print(f"DEBUG: Resultado do banco de dados: {itens}")
+    print("="*40 + "\n")
+    
+    # Calcula o total somando (preço * quantidade) de cada item retornado do banco
     total = sum(float(item.get('price', 0)) * int(item.get('quantity', 0)) for item in itens)
     
     return jsonify({
@@ -263,7 +265,7 @@ def pedido_detalhes(pedido_id):
             {
                 'product_name': item.get('product_name', 'Produto'),
                 'quantity': item.get('quantity', 0),
-                'unit_price': float(item.get('price', 0)),
+                'unit_price': float(item.get('price', 0)), # Chave corrigida para o front-end
                 'subtotal': float(item.get('price', 0)) * int(item.get('quantity', 0)),
             }
             for item in itens
