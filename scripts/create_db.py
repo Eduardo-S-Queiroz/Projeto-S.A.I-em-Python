@@ -104,6 +104,9 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS supplier_id INT NULL;
 ALTER TABLE products ADD CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id);
 ALTER TABLE products ADD CONSTRAINT fk_products_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id);
 
+-- 10. Adicionar campo de endereço de entrega aos pedidos
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address VARCHAR(500) NULL;
+
 -- (O restante das inserções de dados e truncates foram omitidos nesta execução para evitar sobrescrita acidental.)
 """
 

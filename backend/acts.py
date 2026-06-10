@@ -358,6 +358,50 @@ def lista_pedidos():
         return []
 
 
+def obter_detalhes_pedido(pedido_id):
+    """Obtém detalhes completos de um pedido específico com seus itens."""
+    conn = conectar_bd()
+    if not conn:
+        return None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        
+        # Buscar dados do pedido
+        cursor.execute("""
+            SELECT o.*, u.name AS cliente, u.email, 
+                   COALESCE(o.shipping_address, 'Não informado') AS shipping_address
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            WHERE o.id = %s
+        """, (pedido_id,))
+        pedido = cursor.fetchone()
+        
+        if not pedido:
+            cursor.close()
+            conn.close()
+            return None
+        
+        # Buscar itens do pedido
+        cursor.execute("""
+            SELECT ci.*, p.name AS product_name
+            FROM cart_items ci
+            JOIN products p ON ci.product_id = p.id
+            WHERE ci.order_id = %s
+        """, (pedido_id,))
+        itens = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        return {
+            'pedido': pedido,
+            'itens': itens if itens else []
+        }
+    except mysql.connector.Error as err:
+        print(f"Erro ao obter detalhes do pedido: {err}")
+        return None
+
+
 def obter_nome_cliente(user_id):
     conn = conectar_bd()
     if not conn:

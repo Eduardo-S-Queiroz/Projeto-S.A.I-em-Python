@@ -32,6 +32,7 @@ from acts import (
     atualizar_fornecedor,
     excluir_fornecedor,
     lista_pedidos,
+    obter_detalhes_pedido,
     listar_anos_pedidos,
 )
 from relatorios import (
@@ -227,6 +228,48 @@ def pedidos():
     if q:
         pedidos_list = _filtrar_lista_por_q(pedidos_list, ['cliente', 'id', 'status'], q)
     return render_template('pedidos.html', pedidos=pedidos_list)
+
+
+@app.route('/pedido/<int:pedido_id>/detalhes')
+def pedido_detalhes(pedido_id):
+    """Retorna os detalhes de um pedido em formato JSON."""
+    from flask import jsonify
+    
+    resultado = obter_detalhes_pedido(pedido_id)
+    
+    if not resultado:
+        return jsonify({
+            'success': False,
+            'message': 'Pedido não encontrado'
+        }), 404
+    
+    pedido = resultado['pedido']
+    itens = resultado['itens']
+    
+    # Calcular total
+    total = sum(float(item.get('price', 0)) * int(item.get('quantity', 0)) for item in itens)
+    
+    return jsonify({
+        'success': True,
+        'pedido': {
+            'id': pedido.get('id'),
+            'cliente': pedido.get('cliente', 'Não informado'),
+            'email': pedido.get('email', 'Não informado'),
+            'created_at': str(pedido.get('created_at', 'Não informado')),
+            'status': pedido.get('status', 'Não informado'),
+            'shipping_address': pedido.get('shipping_address', 'Não informado'),
+        },
+        'items': [
+            {
+                'product_name': item.get('product_name', 'Produto'),
+                'quantity': item.get('quantity', 0),
+                'unit_price': float(item.get('price', 0)),
+                'subtotal': float(item.get('price', 0)) * int(item.get('quantity', 0)),
+            }
+            for item in itens
+        ],
+        'total': total
+    })
 
 
 @app.route('/dashboard.html')
