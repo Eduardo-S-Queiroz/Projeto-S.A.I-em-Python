@@ -241,6 +241,48 @@ def listar_movimentacoes():
         print(f"Erro ao listar movimentações: {err}")
         return []
 
+def obter_historico_movimentacoes(busca_termo=None):
+    """Retorna o histórico completo de movimentações com os dados cruzados."""
+    conn = conectar_bd()
+    if not conn:
+        return []
+    
+    # Usando dictionary=True para que o Jinja consiga acessar via m.coluna
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Query utilizando LEFT JOIN para trazer informações mesmo se não houver categoria/fornecedor vinculado
+        query = """
+            SELECT 
+                sm.created_at,
+                p.name AS product_name,
+                c.name AS category_name,
+                s.name AS supplier_name,
+                sm.type,
+                sm.quantity,
+                sm.reason
+            FROM stock_movements sm
+            INNER JOIN products p ON sm.product_id = p.id
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN suppliers s ON p.supplier_id = s.id
+        """
+        
+        # Implementação do sistema de busca do cabeçalho da página
+        if busca_termo:
+            query += " WHERE p.name LIKE %s OR sm.reason LIKE %s OR c.name LIKE %s"
+            query += " ORDER BY sm.created_at DESC"
+            cursor.execute(query, (f"%{busca_termo}%", f"%{busca_termo}%", f"%{busca_termo}%"))
+        else:
+            query += " ORDER BY sm.created_at DESC"
+            cursor.execute(query)
+            
+        return cursor.fetchall()
+    except Exception as e:
+        print(f"Erro ao buscar histórico de movimentações: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # --- CATEGORIAS ---
 def listar_categorias():
@@ -422,35 +464,57 @@ def backfill_saida_estoque_pedidos():
     """Gera movimentos de saída para pedidos concluídos que ainda não têm movimentos registrados."""
     conn = conectar_bd()
     if not conn:
+        print("Erro: Não foi possível conectar ao banco de dados para o backfill.")
         return 0
+        
     cursor = conn.cursor()
     try:
+        # Busca todos os pedidos que estão como concluídos
         cursor.execute("SELECT id FROM orders WHERE status = 'completed'")
         pedidos = cursor.fetchall()
+        
+        if not pedidos:
+            print("Backfill: Nenhum pedido concluído encontrado para processar.")
+            return 0
+            
         created = 0
-        for (pedido_id,) in pedidos:
+        for row in pedidos:
+            # Garante a captura do ID independente do tipo de cursor (tupla ou dicionário)
+            pedido_id = row[0] if isinstance(row, tuple) else row['id']
+            
             reason = f'Pedido #{pedido_id}'
+            
+            # Verifica se já existe uma movimentação para este pedido específico
             cursor.execute(
                 "SELECT COUNT(*) FROM stock_movements WHERE reason = %s",
                 (reason,)
             )
+            
             if cursor.fetchone()[0] == 0:
+                print(f"Backfill: Criando movimentação de estoque para o Pedido #{pedido_id}...")
+                
+                # Executa a inserção usando a mesma transação aberta
                 if registrar_saida_estoque_pedido(pedido_id, cursor=cursor, conn=conn):
                     created += 1
+                    
+        # Salva as alterações no banco de uma só vez (Operação Atômica)
         conn.commit()
+        print(f"Backfill finalizado com sucesso! {created} movimentos de estoque criados.")
         return created
-    except mysql.connector.Error as err:
+
+    except Exception as err:
         print(f"Erro ao fazer backfill de saída de estoque de pedidos: {err}")
         try:
             conn.rollback()
+            print("Backfill: Transação desfeita (Rollback) devido ao erro.")
         except Exception:
             pass
         return 0
     finally:
+        # Garante o fechamento seguro dos recursos, mesmo se ocorrer algum erro
         cursor.close()
-        conn.close()
-
-
+        conn.close()        
+        
 def obter_detalhes_pedido(pedido_id):
     """Obtém detalhes completos de um pedido específico com seus itens."""
     conn = conectar_bd()
