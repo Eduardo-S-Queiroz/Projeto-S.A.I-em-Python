@@ -96,6 +96,13 @@
                                     data-featured="{{ 1 if produto.featured else 0 }}">
                                     <i class="fas fa-edit"></i> Editar
                                 </button>
+                                <form method="POST" action="/produtos" style="display:inline; margin-left: 8px;">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="{{ produto.id }}">
+                                    <button type="submit" class="btn-acao btn-excluir" onclick="return confirm('Confirma excluir este produto?');">
+                                        <i class="fas fa-trash"></i> Excluir
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% else %}

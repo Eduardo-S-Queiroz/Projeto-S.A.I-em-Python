@@ -88,6 +88,12 @@
                                     data-supplier-id="{{ item.supplier_id or '' }}" data-quantity="{{ item.quantity }}">
                                     <i class="fas fa-edit"></i> Editar
                                 </button>
+                                <form method="POST" action="/estoque/excluir" style="display:inline; margin-left: 8px;">
+                                    <input type="hidden" name="inventory_id" value="{{ item.id }}">
+                                    <button type="submit" class="btn-acao btn-excluir" onclick="return confirm('Confirma remoção deste registro de estoque?');">
+                                        <i class="fas fa-trash"></i> Excluir
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% else %}

@@ -8,6 +8,66 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.png') }}">
+    <style>
+        .overlay-detalhes {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+        .modal-detalhes {
+            background: #fff;
+            border-radius: 12px;
+            width: min(980px, 100%);
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+        .modal-detalhes-cabecalho {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-detalhes-conteudo {
+            padding: 24px;
+            display: grid;
+            gap: 24px;
+        }
+        .detalhes-info p {
+            margin: 6px 0;
+            color: #333;
+        }
+        .detalhes-itens table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .detalhes-itens th,
+        .detalhes-itens td {
+            padding: 12px 10px;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        .detalhes-total {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 1.05rem;
+            gap: 8px;
+            color: #111827;
+        }
+        .btn-fechar {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #4b5563;
+            font-size: 1.1rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -60,6 +120,7 @@
                             <th>Data</th>
                             <th>Total</th>
                             <th>Status</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -70,13 +131,120 @@
                             <td>{{ p.created_at }}</td>
                             <td>R$ {{ "%.2f" | format(p.total_price | float) }}</td>
                             <td><span class="status {{ p.status }}">{{ p.status }}</span></td>
+                            <td>
+                                <button type="button" class="btn-acao btn-detalhes" data-pedido-id="{{ p.id }}">
+                                    <i class="fas fa-info-circle"></i> Ver Detalhes
+                                </button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </section>
+
+            <div id="overlay-detalhes" class="overlay-detalhes" style="display:none;">
+                <div class="modal-detalhes">
+                    <div class="modal-detalhes-cabecalho">
+                        <h2>Detalhes do Pedido</h2>
+                        <button type="button" id="btn-fechar-detalhes" class="btn-fechar"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="modal-detalhes-conteudo">
+                        <div class="detalhes-info">
+                            <p><strong>Cliente:</strong> <span id="detalhes-cliente"></span></p>
+                            <p><strong>Email:</strong> <span id="detalhes-email"></span></p>
+                            <p><strong>Data:</strong> <span id="detalhes-data"></span></p>
+                            <p><strong>Status:</strong> <span id="detalhes-status"></span></p>
+                            <p><strong>Endereço:</strong> <span id="detalhes-endereco"></span></p>
+                        </div>
+                        <div class="detalhes-itens">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Quantidade</th>
+                                        <th>Preço Unitário</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detalhes-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="detalhes-total">
+                            <strong>Valor total:</strong> <span id="detalhes-total">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const overlay = document.getElementById('overlay-detalhes');
+            const botaoFechar = document.getElementById('btn-fechar-detalhes');
+
+            function formataMoeda(valor) {
+                return Number(valor || 0).toFixed(2).replace('.', ',');
+            }
+
+            document.querySelectorAll('.btn-detalhes').forEach(function(botao) {
+                botao.addEventListener('click', function() {
+                    const pedidoId = this.dataset.pedidoId;
+                    if (!pedidoId) {
+                        return;
+                    }
+
+                    fetch(`/pedido/${pedidoId}/detalhes`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.success) {
+                                alert(data.message || 'Não foi possível carregar os detalhes do pedido.');
+                                return;
+                            }
+
+                            const pedido = data.pedido || {};
+                            const itens = Array.isArray(data.items) ? data.items : [];
+
+                            document.getElementById('detalhes-cliente').textContent = pedido.cliente || 'Não informado';
+                            document.getElementById('detalhes-email').textContent = pedido.email || 'Não informado';
+                            document.getElementById('detalhes-data').textContent = pedido.created_at || 'Não informado';
+                            document.getElementById('detalhes-status').textContent = pedido.status || 'Não informado';
+                            document.getElementById('detalhes-endereco').textContent = pedido.shipping_address || 'Não informado';
+
+                            const corpoTabela = document.getElementById('detalhes-tbody');
+                            corpoTabela.innerHTML = '';
+
+                            if (itens.length === 0) {
+                                corpoTabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum item encontrado.</td></tr>';
+                            } else {
+                                itens.forEach(function(item) {
+                                    const tr = document.createElement('tr');
+                                    tr.innerHTML = `
+                                        <td>${item.product_name || 'Produto'}</td>
+                                        <td>${item.quantity || 0}</td>
+                                        <td>R$ ${formataMoeda(item.unit_price)}</td>
+                                        <td>R$ ${formataMoeda(item.subtotal)}</td>
+                                    `;
+                                    corpoTabela.appendChild(tr);
+                                });
+                            }
+
+                            document.getElementById('detalhes-total').textContent = `R$ ${formataMoeda(data.total)}`;
+                            overlay.style.display = 'flex';
+                        })
+                        .catch(error => {
+                            console.error('Erro ao carregar detalhes do pedido:', error);
+                            alert('Erro ao carregar detalhes do pedido.');
+                        });
+                });
+            });
+
+            if (botaoFechar) {
+                botaoFechar.addEventListener('click', function() {
+                    overlay.style.display = 'none';
+                });
+            }
+        });
+    </script>
     <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
     <style>
         .badge-entrada {
