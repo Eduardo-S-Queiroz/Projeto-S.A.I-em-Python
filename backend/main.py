@@ -34,6 +34,7 @@ from acts import (
     lista_pedidos,
     obter_detalhes_pedido,
     listar_anos_pedidos,
+    obter_historico_movimentacoes,
 )
 from relatorios import (
     get_relatorio_operacional,
@@ -213,12 +214,15 @@ def fornecedores():
 
 
 @app.route('/movimentacoes.html')
-def movimentacoes():
-    q = request.args.get('q', default='')
-    movs = listar_movimentacoes()
-    if q:
-        movs = _filtrar_lista_por_q(movs, ['product_name', 'category_name', 'supplier_name', 'reason', 'type'], q)
-    return render_template('movimentacoes.html', movs=movs)
+def pagina_movimentacoes():
+    # Captura o parâmetro 'q' enviado pelo formulário de busca do cabeçalho
+    termo_busca = request.args.get('q', '').strip()
+    
+    # Obtém os dados formatados do banco
+    lista_movimentacoes = obter_historico_movimentacoes(busca_termo=termo_busca)
+    
+    # Renderiza o template passando a variável 'movs' que o HTML espera encontrar
+    return render_template('movimentacoes.html', movs=lista_movimentacoes)
 
 
 @app.route('/pedidos.html')
