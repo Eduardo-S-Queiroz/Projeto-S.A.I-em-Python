@@ -358,6 +358,99 @@ def lista_pedidos():
         return []
 
 
+def registrar_saida_estoque_pedido(order_id, cursor=None, conn=None):
+    """Registra saída de estoque para os itens de um pedido completo."""
+    own_connection = False
+    if cursor is None or conn is None:
+        conn = conectar_bd()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        own_connection = True
+    try:
+        cursor.execute(
+            "SELECT product_id, quantity FROM cart_items WHERE order_id = %s",
+            (order_id,)
+        )
+        itens = cursor.fetchall()
+        if not itens:
+            return False
+
+        for item in itens:
+            product_id = item[0]
+            quantity = int(item[1] or 0)
+            if quantity <= 0:
+                continue
+
+            cursor.execute(
+                "SELECT id, quantity FROM inventory WHERE product_id = %s",
+                (product_id,)
+            )
+            inventory_row = cursor.fetchone()
+            if inventory_row:
+                inventory_id = inventory_row[0]
+                current_qty = int(inventory_row[1] or 0)
+                new_qty = max(0, current_qty - quantity)
+                cursor.execute(
+                    "UPDATE inventory SET quantity = %s WHERE id = %s",
+                    (new_qty, inventory_id)
+                )
+
+            cursor.execute(
+                "INSERT INTO stock_movements (product_id, type, quantity, reason) VALUES (%s, %s, %s, %s)",
+                (product_id, 'exit', quantity, f'Pedido #{order_id}')
+            )
+
+        if own_connection:
+            conn.commit()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Erro ao registrar saída de estoque do pedido: {err}")
+        if own_connection:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return False
+    finally:
+        if own_connection:
+            cursor.close()
+            conn.close()
+
+
+def backfill_saida_estoque_pedidos():
+    """Gera movimentos de saída para pedidos concluídos que ainda não têm movimentos registrados."""
+    conn = conectar_bd()
+    if not conn:
+        return 0
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM orders WHERE status = 'completed'")
+        pedidos = cursor.fetchall()
+        created = 0
+        for (pedido_id,) in pedidos:
+            reason = f'Pedido #{pedido_id}'
+            cursor.execute(
+                "SELECT COUNT(*) FROM stock_movements WHERE reason = %s",
+                (reason,)
+            )
+            if cursor.fetchone()[0] == 0:
+                if registrar_saida_estoque_pedido(pedido_id, cursor=cursor, conn=conn):
+                    created += 1
+        conn.commit()
+        return created
+    except mysql.connector.Error as err:
+        print(f"Erro ao fazer backfill de saída de estoque de pedidos: {err}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return 0
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def obter_detalhes_pedido(pedido_id):
     """Obtém detalhes completos de um pedido específico com seus itens."""
     conn = conectar_bd()

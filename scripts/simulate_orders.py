@@ -165,6 +165,13 @@ def insert_orders_to_db(orders, items):
                 )
                 inserted_items += 1
 
+        # Registrar saídas de estoque somente para pedidos concluídos
+        for o in orders:
+            if o.get('status') == 'completed':
+                db_oid = order_id_map.get(o['order_id'])
+                if db_oid:
+                    acts.registrar_saida_estoque_pedido(db_oid, cursor=cursor, conn=conn)
+
         conn.commit()
     except Exception as e:
         try:
