@@ -159,34 +159,27 @@ def listar_estoque():
         return []
 
 
-def salvar_estoque(product_id, category_id, supplier_id, quantity, inventory_id=None):
+def salvar_estoque(product_id, category_id, supplier_id, quantity):
     conn = conectar_bd()
     if not conn:
         return False
     try:
         quantity = int(quantity or 0)
         cursor = conn.cursor()
-        inventory_query = "SELECT id, quantity, product_id FROM inventory WHERE product_id = %s"
-        inventory_params = (product_id,)
-        if inventory_id:
-            inventory_query = "SELECT id, quantity, product_id FROM inventory WHERE id = %s"
-            inventory_params = (inventory_id,)
-        cursor.execute(inventory_query, inventory_params)
+        cursor.execute("SELECT id, quantity FROM inventory WHERE product_id = %s", (product_id,))
         res = cursor.fetchone()
         if res:
-            inventory_row_id = res[0]
             old_qty = int(res[1] or 0)
-            current_product_id = res[2]
             cursor.execute(
-                "UPDATE inventory SET category_id=%s, supplier_id=%s, quantity=%s WHERE id=%s",
-                (category_id or None, supplier_id or None, quantity, inventory_row_id)
+                "UPDATE inventory SET category_id=%s, supplier_id=%s, quantity=%s WHERE product_id=%s",
+                (category_id or None, supplier_id or None, quantity, product_id)
             )
             if quantity != old_qty:
                 m_type = 'entry' if quantity > old_qty else 'exit'
                 m_qty = abs(quantity - old_qty)
                 cursor.execute(
-                    "INSERT INTO stock_movements (product_id, type, quantity, reason, movement_category) VALUES (%s, %s, %s, %s, %s)",
-                    (current_product_id, m_type, m_qty, "Ajuste manual de estoque", "Ajuste Manual")
+                    "INSERT INTO stock_movements (product_id, type, quantity, reason) VALUES (%s, %s, %s, %s)",
+                    (product_id, m_type, m_qty, "Ajuste manual de estoque")
                 )
         else:
             cursor.execute(
@@ -195,8 +188,8 @@ def salvar_estoque(product_id, category_id, supplier_id, quantity, inventory_id=
             )
             if quantity > 0:
                 cursor.execute(
-                    "INSERT INTO stock_movements (product_id, type, quantity, reason, movement_category) VALUES (%s, %s, %s, %s, %s)",
-                    (product_id, 'entry', quantity, "Saldo inicial", "Saldo Inicial")
+                    "INSERT INTO stock_movements (product_id, type, quantity, reason) VALUES (%s, %s, %s, %s)",
+                    (product_id, 'entry', quantity, "Saldo inicial")
                 )
         conn.commit()
         cursor.close()
@@ -240,48 +233,6 @@ def listar_movimentacoes():
     except mysql.connector.Error as err:
         print(f"Erro ao listar movimentações: {err}")
         return []
-
-def obter_historico_movimentacoes(busca_termo=None):
-    """Retorna o histórico completo de movimentações com os dados cruzados."""
-    conn = conectar_bd()
-    if not conn:
-        return []
-    
-    # Usando dictionary=True para que o Jinja consiga acessar via m.coluna
-    cursor = conn.cursor(dictionary=True)
-    try:
-        # Query utilizando LEFT JOIN para trazer informações mesmo se não houver categoria/fornecedor vinculado
-        query = """
-            SELECT 
-                sm.created_at,
-                p.name AS product_name,
-                c.name AS category_name,
-                s.name AS supplier_name,
-                sm.type,
-                sm.quantity,
-                sm.reason
-            FROM stock_movements sm
-            INNER JOIN products p ON sm.product_id = p.id
-            LEFT JOIN categories c ON p.category_id = c.id
-            LEFT JOIN suppliers s ON p.supplier_id = s.id
-        """
-        
-        # Implementação do sistema de busca do cabeçalho da página
-        if busca_termo:
-            query += " WHERE p.name LIKE %s OR sm.reason LIKE %s OR c.name LIKE %s"
-            query += " ORDER BY sm.created_at DESC"
-            cursor.execute(query, (f"%{busca_termo}%", f"%{busca_termo}%", f"%{busca_termo}%"))
-        else:
-            query += " ORDER BY sm.created_at DESC"
-            cursor.execute(query)
-            
-        return cursor.fetchall()
-    except Exception as e:
-        print(f"Erro ao buscar histórico de movimentações: {e}")
-        return []
-    finally:
-        cursor.close()
-        conn.close()
 
 
 # --- CATEGORIAS ---
@@ -398,194 +349,6 @@ def lista_pedidos():
     except mysql.connector.Error as err:
         print(f"Erro ao listar pedidos: {err}")
         return []
-
-
-def registrar_saida_estoque_pedido(order_id, cursor=None, conn=None):
-    """Registra saída de estoque para os itens de um pedido completo."""
-    own_connection = False
-    if cursor is None or conn is None:
-        conn = conectar_bd()
-        if not conn:
-            return False
-        cursor = conn.cursor()
-        own_connection = True
-    try:
-        cursor.execute(
-            "SELECT product_id, quantity FROM cart_items WHERE order_id = %s",
-            (order_id,)
-        )
-        itens = cursor.fetchall()
-        if not itens:
-            return False
-
-        for item in itens:
-            product_id = item[0]
-            quantity = int(item[1] or 0)
-            if quantity <= 0:
-                continue
-
-            cursor.execute(
-                "SELECT id, quantity FROM inventory WHERE product_id = %s",
-                (product_id,)
-            )
-            inventory_row = cursor.fetchone()
-            if inventory_row:
-                inventory_id = inventory_row[0]
-                current_qty = int(inventory_row[1] or 0)
-                new_qty = max(0, current_qty - quantity)
-                cursor.execute(
-                    "UPDATE inventory SET quantity = %s WHERE id = %s",
-                    (new_qty, inventory_id)
-                )
-
-            cursor.execute(
-                "INSERT INTO stock_movements (product_id, type, quantity, reason, movement_category) VALUES (%s, %s, %s, %s, %s)",
-                (product_id, 'exit', quantity, f'Pedido #{order_id}', 'Pedido E-commerce')
-            )
-
-        if own_connection:
-            conn.commit()
-        return True
-    except mysql.connector.Error as err:
-        print(f"Erro ao registrar saída de estoque do pedido: {err}")
-        if own_connection:
-            try:
-                conn.rollback()
-            except Exception:
-                pass
-        return False
-    finally:
-        if own_connection:
-            cursor.close()
-            conn.close()
-
-
-def backfill_saida_estoque_pedidos():
-    """Gera movimentos de saída para pedidos concluídos que ainda não têm movimentos registrados."""
-    conn = conectar_bd()
-    if not conn:
-        print("Erro: Não foi possível conectar ao banco de dados para o backfill.")
-        return 0
-        
-    cursor = conn.cursor()
-    try:
-        # Busca todos os pedidos que estão como concluídos
-        cursor.execute("SELECT id FROM orders WHERE status = 'completed'")
-        pedidos = cursor.fetchall()
-        
-        if not pedidos:
-            print("Backfill: Nenhum pedido concluído encontrado para processar.")
-            return 0
-            
-        created = 0
-        for row in pedidos:
-            # Garante a captura do ID independente do tipo de cursor (tupla ou dicionário)
-            pedido_id = row[0] if isinstance(row, tuple) else row['id']
-            
-            reason = f'Pedido #{pedido_id}'
-            
-            # Verifica se já existe uma movimentação para este pedido específico
-            cursor.execute(
-                "SELECT COUNT(*) FROM stock_movements WHERE reason = %s",
-                (reason,)
-            )
-            
-            if cursor.fetchone()[0] == 0:
-                print(f"Backfill: Criando movimentação de estoque para o Pedido #{pedido_id}...")
-                
-                # Executa a inserção usando a mesma transação aberta
-                if registrar_saida_estoque_pedido(pedido_id, cursor=cursor, conn=conn):
-                    created += 1
-                    
-        # Salva as alterações no banco de uma só vez (Operação Atômica)
-        conn.commit()
-        print(f"Backfill finalizado com sucesso! {created} movimentos de estoque criados.")
-        return created
-
-    except Exception as err:
-        print(f"Erro ao fazer backfill de saída de estoque de pedidos: {err}")
-        try:
-            conn.rollback()
-            print("Backfill: Transação desfeita (Rollback) devido ao erro.")
-        except Exception:
-            pass
-        return 0
-    finally:
-        # Garante o fechamento seguro dos recursos, mesmo se ocorrer algum erro
-        cursor.close()
-        conn.close()
-
-
-def atualizar_categoria_movimentacoes():
-    """Atualiza as movimentações de pedidos existentes com categoria 'Pedido E-commerce'."""
-    conn = conectar_bd()
-    if not conn:
-        print("Erro: Não foi possível conectar ao banco de dados.")
-        return 0
-    cursor = conn.cursor()
-    try:
-        # Atualizar movimentações que começam com 'Pedido #' e não têm categoria
-        cursor.execute(
-            "UPDATE stock_movements SET movement_category = 'Pedido E-commerce' WHERE reason LIKE 'Pedido #%' AND movement_category IS NULL"
-        )
-        conn.commit()
-        updated = cursor.rowcount
-        print(f"Categoria atualizada para {updated} movimentações de pedidos.")
-        return updated
-    except mysql.connector.Error as err:
-        print(f"Erro ao atualizar categoria de movimentações: {err}")
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        return 0
-    finally:
-        cursor.close()
-        conn.close()
-
-        
-def obter_detalhes_pedido(pedido_id):
-    """Obtém detalhes completos de um pedido específico com seus itens."""
-    conn = conectar_bd()
-    if not conn:
-        return None
-    try:
-        cursor = conn.cursor(dictionary=True)
-        
-        # Buscar dados do pedido
-        cursor.execute("""
-            SELECT o.*, u.name AS cliente, u.email, 
-                   COALESCE(o.shipping_address, 'Não informado') AS shipping_address
-            FROM orders o
-            JOIN users u ON o.user_id = u.id
-            WHERE o.id = %s
-        """, (pedido_id,))
-        pedido = cursor.fetchone()
-        
-        if not pedido:
-            cursor.close()
-            conn.close()
-            return None
-        
-        # Buscar itens do pedido
-        cursor.execute("""
-            SELECT ci.*, p.name AS product_name
-            FROM cart_items ci
-            JOIN products p ON ci.product_id = p.id
-            WHERE ci.order_id = %s
-        """, (pedido_id,))
-        itens = cursor.fetchall()
-        
-        cursor.close()
-        conn.close()
-        
-        return {
-            'pedido': pedido,
-            'itens': itens if itens else []
-        }
-    except mysql.connector.Error as err:
-        print(f"Erro ao obter detalhes do pedido: {err}")
-        return None
 
 
 def obter_nome_cliente(user_id):

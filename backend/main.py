@@ -32,9 +32,7 @@ from acts import (
     atualizar_fornecedor,
     excluir_fornecedor,
     lista_pedidos,
-    obter_detalhes_pedido,
     listar_anos_pedidos,
-    obter_historico_movimentacoes,
 )
 from relatorios import (
     get_relatorio_operacional,
@@ -46,37 +44,6 @@ from relatorios import (
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-
-def _filtrar_lista_por_q(items, campos, q):
-    """Filtra uma lista de dicionários por termos em `q` (case-insensitive).
-
-    - items: lista de dicts
-    - campos: lista de chaves a checar no dict
-    - q: string de busca
-    Retorna a lista filtrada (se q vazio, retorna original).
-    """
-    if not q:
-        return items
-    ql = q.strip().lower()
-    def matches(item):
-        for c in campos:
-            v = item.get(c) if isinstance(item, dict) else None
-            if v is None:
-                # tenta atributos de objetos (caso retornos não sejam dicts)
-                try:
-                    v = getattr(item, c)
-                except Exception:
-                    v = None
-            if v is None:
-                continue
-            try:
-                if ql in str(v).lower():
-                    return True
-            except Exception:
-                continue
-        return False
-    return [it for it in items if matches(it)]
 
 
 def salvar_upload_imagem(campo='image_file'):
@@ -105,21 +72,11 @@ def login():
 
 @app.route('/index.html')
 def index():
-    q = request.args.get('q', default='')
-    produtos = listar_produtos()
-    categorias = listar_categorias()
-    fornecedores = listar_fornecedores()
-
-    if q:
-        produtos = _filtrar_lista_por_q(produtos, ['name', 'description'], q)
-        categorias = _filtrar_lista_por_q(categorias, ['name'], q)
-        fornecedores = _filtrar_lista_por_q(fornecedores, ['name'], q)
-
     return render_template(
         'index.html',
-        produtos=produtos,
-        categorias=categorias,
-        fornecedores=fornecedores
+        produtos=listar_produtos(),
+        categorias=listar_categorias(),
+        fornecedores=listar_fornecedores()
     )
 
 
@@ -144,32 +101,22 @@ def produtos_actions():
 
 @app.route('/estoque.html')
 def estoque():
-    q = request.args.get('q', default='')
-    estoque_list = listar_estoque()
-    produtos = listar_produtos()
-    categorias = listar_categorias()
-    fornecedores = listar_fornecedores()
-
-    if q:
-        estoque_list = _filtrar_lista_por_q(estoque_list, ['product_name', 'category_name', 'supplier_name'], q)
-
     return render_template(
         'estoque.html',
-        estoque=estoque_list,
-        produtos=produtos,
-        categorias=categorias,
-        fornecedores=fornecedores
+        estoque=listar_estoque(),
+        produtos=listar_produtos(),
+        categorias=listar_categorias(),
+        fornecedores=listar_fornecedores()
     )
 
 
 @app.route('/estoque/salvar', methods=['POST'])
 def estoque_salvar():
-    inventory_id = request.form.get('inventory_id')
-    product_id = request.form.get('product_id') or request.form.get('original_product_id')
+    product_id = request.form.get('product_id')
     category_id = request.form.get('category_id')
     supplier_id = request.form.get('supplier_id')
     quantity = request.form.get('quantity')
-    salvar_estoque(product_id, category_id, supplier_id, quantity, inventory_id=inventory_id)
+    salvar_estoque(product_id, category_id, supplier_id, quantity)
     return redirect(url_for('estoque'))
 
 
@@ -186,11 +133,7 @@ def categorias():
         elif action == 'delete' and category_id:
             excluir_categoria(category_id)
         return redirect(url_for('categorias'))
-    q = request.args.get('q', default='')
-    categorias_list = listar_categorias()
-    if q:
-        categorias_list = _filtrar_lista_por_q(categorias_list, ['name'], q)
-    return render_template('categorias.html', categorias=categorias_list)
+    return render_template('categorias.html', categorias=listar_categorias())
 
 
 @app.route('/fornecedores.html', methods=['GET', 'POST'])
@@ -206,76 +149,17 @@ def fornecedores():
         elif action == 'delete' and supplier_id:
             excluir_fornecedor(supplier_id)
         return redirect(url_for('fornecedores'))
-    q = request.args.get('q', default='')
-    fornecedores_list = listar_fornecedores()
-    if q:
-        fornecedores_list = _filtrar_lista_por_q(fornecedores_list, ['name'], q)
-    return render_template('fornecedores.html', fornecedores=fornecedores_list)
+    return render_template('fornecedores.html', fornecedores=listar_fornecedores())
 
 
 @app.route('/movimentacoes.html')
-def pagina_movimentacoes():
-    # Captura o parâmetro 'q' enviado pelo formulário de busca do cabeçalho
-    termo_busca = request.args.get('q', '').strip()
-    
-    # Obtém os dados formatados do banco
-    lista_movimentacoes = obter_historico_movimentacoes(busca_termo=termo_busca)
-    
-    # Renderiza o template passando a variável 'movs' que o HTML espera encontrar
-    return render_template('movimentacoes.html', movs=lista_movimentacoes)
+def movimentacoes():
+    return render_template('movimentacoes.html', movs=listar_movimentacoes())
 
 
 @app.route('/pedidos.html')
 def pedidos():
-    q = request.args.get('q', default='')
-    pedidos_list = lista_pedidos()
-    if q:
-        pedidos_list = _filtrar_lista_por_q(pedidos_list, ['cliente', 'id', 'status'], q)
-    return render_template('pedidos.html', pedidos=pedidos_list)
-
-
-@app.route('/pedido/<int:pedido_id>/detalhes')
-def pedido_detalhes(pedido_id):
-    from flask import jsonify
-    
-    resultado = obter_detalhes_pedido(pedido_id)
-    
-    if not resultado:
-        return jsonify({'success': False, 'message': 'Pedido não encontrado'}), 404
-    
-    pedido = resultado['pedido']
-    itens = resultado['itens']
-    
-    
-    print("\n" + "="*40)
-    print(f"DEBUG: Buscando itens para o pedido ID: {pedido_id}")
-    print(f"DEBUG: Resultado do banco de dados: {itens}")
-    print("="*40 + "\n")
-    
-    # Calcula o total somando (preço * quantidade) de cada item retornado do banco
-    total = sum(float(item.get('price', 0)) * int(item.get('quantity', 0)) for item in itens)
-    
-    return jsonify({
-        'success': True,
-        'pedido': {
-            'id': pedido.get('id'),
-            'cliente': pedido.get('cliente', 'Não informado'),
-            'email': pedido.get('email', 'Não informado'),
-            'created_at': str(pedido.get('created_at', 'Não informado')),
-            'status': pedido.get('status', 'Não informado'),
-            'shipping_address': pedido.get('shipping_address', 'Não informado'),
-        },
-        'items': [
-            {
-                'product_name': item.get('product_name', 'Produto'),
-                'quantity': item.get('quantity', 0),
-                'unit_price': float(item.get('price', 0)), # Chave corrigida para o front-end
-                'subtotal': float(item.get('price', 0)) * int(item.get('quantity', 0)),
-            }
-            for item in itens
-        ],
-        'total': total
-    })
+    return render_template('pedidos.html', pedidos=lista_pedidos())
 
 
 @app.route('/dashboard.html')
