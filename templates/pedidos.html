@@ -106,7 +106,7 @@
                     <p>Histórico de vendas e faturamento.</p>
                 </div>
                 <form class="header-search" method="GET" action="" role="search">
-                    <input type="search" name="q" placeholder="Pesquisar pedidos..." aria-label="Pesquisar">
+                    <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar pedidos..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
             </header>

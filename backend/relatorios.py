@@ -91,6 +91,17 @@ def _montar_where(filtros=None, ano=None, meses=None):
     if filtros.get('categoria'):
         where.append('c.id = %s')
         params.append(filtros['categoria'])
+    if filtros.get('busca'):
+        busca = f"%{filtros['busca']}%"
+        where.append('(' + ' OR '.join([
+            'u.name LIKE %s',
+            'u.email LIKE %s',
+            'p.name LIKE %s',
+            'c.name LIKE %s',
+            's.name LIKE %s',
+            'o.status LIKE %s'
+        ]) + ')')
+        params.extend([busca, busca, busca, busca, busca, busca])
     if ano:
         where.append('YEAR(o.created_at) = %s')
         params.append(ano)
@@ -221,12 +232,12 @@ def get_relatorio_mensal(ano=None, meses=None):
     return {'dados': dados, 'totais': _totalizadores(rows), 'ano': ano}
 
 
-def get_dashboard_analytics(ano=None, meses=None):
+def get_dashboard_analytics(ano=None, meses=None, filtros=None):
     """Gera os valores e gráficos necessários para o dashboard principal."""
     if not ano:
         ano = datetime.now().year
 
-    where_sql, params = _montar_where(ano=ano, meses=meses)
+    where_sql, params = _montar_where(filtros=filtros, ano=ano, meses=meses)
     rows = _fetchall(_base_query(where_sql), params)
     totais = _totalizadores(rows)
 

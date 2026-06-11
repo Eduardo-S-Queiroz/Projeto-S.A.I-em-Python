@@ -45,7 +45,7 @@
                     <p>Visão executiva do e-commerce, com filtros, cartões e gráficos interativos.</p>
                 </div>
                 <form class="header-search" method="GET" action="" role="search">
-                    <input type="search" name="q" placeholder="Pesquisar..." aria-label="Pesquisar">
+                    <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
             </header>

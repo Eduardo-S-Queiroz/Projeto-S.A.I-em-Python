@@ -45,7 +45,7 @@
                     <p>Vincule produtos já cadastrados a categoria, fornecedor e quantidade.</p>
                 </div>
                 <form class="header-search" method="GET" action="" role="search">
-                    <input type="search" name="q" placeholder="Pesquisar estoque..." aria-label="Pesquisar">
+                    <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar estoque..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
                 <button class="btn-adicionar" type="button" onclick="abrirModalEstoque()">+ Adicionar ao

@@ -43,7 +43,7 @@
                     <p>Registro auditável de entradas e saídas do estoque do e-commerce de chás.</p>
                 </div>
                 <form class="header-search" method="GET" action="" role="search">
-                    <input type="search" name="q" placeholder="Pesquisar movimentações..." aria-label="Pesquisar">
+                    <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar movimentações..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
             </header>

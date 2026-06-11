@@ -45,7 +45,7 @@
                     <p>Cadastre, edite e exclua categorias usadas no controle de estoque dos chás.</p>
                 </div>
                 <form class="header-search" method="GET" action="" role="search">
-                    <input type="search" name="q" placeholder="Pesquisar..." aria-label="Pesquisar">
+                    <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
                 <button class="btn-adicionar" type="button" onclick="abrirModalCategoria()"><i class="fas fa-plus"></i>

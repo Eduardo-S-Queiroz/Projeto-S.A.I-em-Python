@@ -59,13 +59,20 @@ def verificar_login(email, password):
 
 
 # --- PRODUTOS (Controle Geral: aparência, descrição, preço e imagem) ---
-def listar_produtos():
+def listar_produtos(q=None):
     conn = conectar_bd()
     if not conn:
         return []
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM products ORDER BY name")
+        if q:
+            q_like = f"%{q}%"
+            cursor.execute(
+                "SELECT * FROM products WHERE name LIKE %s OR description LIKE %s ORDER BY name",
+                (q_like, q_like)
+            )
+        else:
+            cursor.execute("SELECT * FROM products ORDER BY name")
         res = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -128,7 +135,7 @@ def atualizar_produto(id, name, description, price, image_url=None, image_path=N
 
 
 # --- ESTOQUE (quantidade, categoria e fornecedor vinculados ao produto) ---
-def listar_estoque():
+def listar_estoque(q=None):
     conn = conectar_bd()
     if not conn:
         return []
@@ -147,9 +154,19 @@ def listar_estoque():
             JOIN products p ON i.product_id = p.id
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN suppliers s ON i.supplier_id = s.id
-            ORDER BY p.name
         """
-        cursor.execute(query)
+        params = []
+        if q:
+            q_like = f"%{q}%"
+            query += """
+                WHERE p.name LIKE %s
+                   OR c.name LIKE %s
+                   OR s.name LIKE %s
+                   OR CAST(i.quantity AS CHAR) LIKE %s
+            """
+            params = [q_like, q_like, q_like, q_like]
+        query += " ORDER BY p.name"
+        cursor.execute(query, params)
         res = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -206,7 +223,7 @@ def salvar_estoque(product_id, category_id, supplier_id, quantity):
 
 
 # --- MOVIMENTAÇÕES ---
-def listar_movimentacoes():
+def listar_movimentacoes(q=None):
     conn = conectar_bd()
     if not conn:
         return []
@@ -223,9 +240,21 @@ def listar_movimentacoes():
             LEFT JOIN inventory i ON i.product_id = p.id
             LEFT JOIN categories c ON i.category_id = c.id
             LEFT JOIN suppliers s ON i.supplier_id = s.id
-            ORDER BY m.created_at DESC
         """
-        cursor.execute(query)
+        params = []
+        if q:
+            q_like = f"%{q}%"
+            query += """
+                WHERE p.name LIKE %s
+                   OR c.name LIKE %s
+                   OR s.name LIKE %s
+                   OR m.type LIKE %s
+                   OR m.reason LIKE %s
+                   OR CAST(m.quantity AS CHAR) LIKE %s
+            """
+            params = [q_like, q_like, q_like, q_like, q_like, q_like]
+        query += " ORDER BY m.created_at DESC"
+        cursor.execute(query, params)
         res = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -236,13 +265,17 @@ def listar_movimentacoes():
 
 
 # --- CATEGORIAS ---
-def listar_categorias():
+def listar_categorias(q=None):
     conn = conectar_bd()
     if not conn:
         return []
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM categories ORDER BY name")
+        if q:
+            q_like = f"%{q}%"
+            cursor.execute("SELECT * FROM categories WHERE name LIKE %s ORDER BY name", (q_like,))
+        else:
+            cursor.execute("SELECT * FROM categories ORDER BY name")
         res = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -283,13 +316,17 @@ def excluir_categoria(id):
 
 
 # --- FORNECEDORES ---
-def listar_fornecedores():
+def listar_fornecedores(q=None):
     conn = conectar_bd()
     if not conn:
         return []
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM suppliers ORDER BY name")
+        if q:
+            q_like = f"%{q}%"
+            cursor.execute("SELECT * FROM suppliers WHERE name LIKE %s ORDER BY name", (q_like,))
+        else:
+            cursor.execute("SELECT * FROM suppliers ORDER BY name")
         res = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -330,18 +367,32 @@ def excluir_fornecedor(id):
 
 
 # --- PEDIDOS ---
-def lista_pedidos():
+def lista_pedidos(q=None):
     conn = conectar_bd()
     if not conn:
         return []
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
+        query = """
             SELECT o.*, u.name AS cliente, u.email
             FROM orders o
             JOIN users u ON o.user_id = u.id
-            ORDER BY o.created_at DESC
-        """)
+        """
+        params = []
+        if q:
+            q_like = f"%{q}%"
+            conditions = [
+                "u.name LIKE %s",
+                "u.email LIKE %s",
+                "o.status LIKE %s"
+            ]
+            params = [q_like, q_like, q_like]
+            if q.isdigit():
+                conditions.append("o.id = %s")
+                params.append(int(q))
+            query += " WHERE " + " OR ".join(conditions)
+        query += " ORDER BY o.created_at DESC"
+        cursor.execute(query, params)
         res = cursor.fetchall()
         cursor.close()
         conn.close()

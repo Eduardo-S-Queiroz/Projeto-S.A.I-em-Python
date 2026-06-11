@@ -44,7 +44,7 @@
                     <p>Consulta detalhada por pedido, produto, categoria, fornecedor e impostos.</p>
                 </div>
                 <form class="header-search" method="GET" action="" role="search">
-                    <input type="search" name="q" placeholder="Pesquisar relatório..." aria-label="Pesquisar">
+                    <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar relatório..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
                 <a class="btn-adicionar" href="/exportar_operacional?{{ request.query_string.decode() }}"><i
@@ -72,6 +72,7 @@
                             Pesquisar</button><a class="btn-link-limpar" href="/relatorio_operacional.html">Limpar</a>
                     </div>
                     <input type="hidden" name="pagina" value="1">
+                    <input type="hidden" name="q" value="{{ request.args.get('q', '') }}">
                 </form>
             </section>
             <section class="kpi-grid-projeto2">
@@ -124,10 +125,10 @@
                     </tbody>
                 </table>
                 <div class="paginacao-projeto2"><a class="{{ 'desativado' if pagina <= 1 else '' }}"
-                        href="?data_inicio={{ request.args.get('data_inicio','') }}&data_fim={{ request.args.get('data_fim','') }}&produto={{ request.args.get('produto','') }}&categoria={{ request.args.get('categoria','') }}&fornecedor={{ request.args.get('fornecedor','') }}&pagina={{ pagina-1 if pagina>1 else 1 }}">Anterior</a><span>Página
+                        href="?data_inicio={{ request.args.get('data_inicio','') }}&data_fim={{ request.args.get('data_fim','') }}&produto={{ request.args.get('produto','') }}&categoria={{ request.args.get('categoria','') }}&fornecedor={{ request.args.get('fornecedor','') }}&q={{ request.args.get('q','') }}&pagina={{ pagina-1 if pagina>1 else 1 }}">Anterior</a><span>Página
                         {{ pagina }} de {{ total_paginas }}</span><a
                         class="{{ 'desativado' if pagina >= total_paginas else '' }}"
-                        href="?data_inicio={{ request.args.get('data_inicio','') }}&data_fim={{ request.args.get('data_fim','') }}&produto={{ request.args.get('produto','') }}&categoria={{ request.args.get('categoria','') }}&fornecedor={{ request.args.get('fornecedor','') }}&pagina={{ pagina+1 if pagina<total_paginas else total_paginas }}">Próxima</a>
+                        href="?data_inicio={{ request.args.get('data_inicio','') }}&data_fim={{ request.args.get('data_fim','') }}&produto={{ request.args.get('produto','') }}&categoria={{ request.args.get('categoria','') }}&fornecedor={{ request.args.get('fornecedor','') }}&q={{ request.args.get('q','') }}&pagina={{ pagina+1 if pagina<total_paginas else total_paginas }}">Próxima</a>
                 </div>
             </section>
         </main>

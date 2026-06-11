@@ -74,9 +74,10 @@ def login():
 
 @app.route('/index.html')
 def index():
+    q = request.args.get('q', '').strip() or None
     return render_template(
         'index.html',
-        produtos=listar_produtos(),
+        produtos=listar_produtos(q=q),
         categorias=listar_categorias(),
         fornecedores=listar_fornecedores()
     )
@@ -104,9 +105,10 @@ def produtos_actions():
 
 @app.route('/estoque.html')
 def estoque():
+    q = request.args.get('q', '').strip() or None
     return render_template(
         'estoque.html',
-        estoque=listar_estoque(),
+        estoque=listar_estoque(q=q),
         produtos=listar_produtos(),
         categorias=listar_categorias(),
         fornecedores=listar_fornecedores()
@@ -142,7 +144,8 @@ def categorias():
         elif action == 'delete' and category_id:
             excluir_categoria(category_id)
         return redirect(url_for('categorias'))
-    return render_template('categorias.html', categorias=listar_categorias())
+    q = request.args.get('q', '').strip() or None
+    return render_template('categorias.html', categorias=listar_categorias(q=q))
 
 
 @app.route('/fornecedores.html', methods=['GET', 'POST'])
@@ -158,17 +161,20 @@ def fornecedores():
         elif action == 'delete' and supplier_id:
             excluir_fornecedor(supplier_id)
         return redirect(url_for('fornecedores'))
-    return render_template('fornecedores.html', fornecedores=listar_fornecedores())
+    q = request.args.get('q', '').strip() or None
+    return render_template('fornecedores.html', fornecedores=listar_fornecedores(q=q))
 
 
 @app.route('/movimentacoes.html')
 def movimentacoes():
-    return render_template('movimentacoes.html', movs=listar_movimentacoes())
+    q = request.args.get('q', '').strip() or None
+    return render_template('movimentacoes.html', movs=listar_movimentacoes(q=q))
 
 
 @app.route('/pedidos.html')
 def pedidos():
-    return render_template('pedidos.html', pedidos=lista_pedidos())
+    q = request.args.get('q', '').strip() or None
+    return render_template('pedidos.html', pedidos=lista_pedidos(q=q))
 
 @app.route('/pedido/<int:id>/detalhes', methods=['GET'])
 def detalhes_do_pedido(id):
@@ -193,20 +199,31 @@ def detalhes_do_pedido(id):
 def dashboard():
     ano = request.args.get('ano', type=int)
     meses = request.args.getlist('mes', type=int)
-    dados = get_dashboard_analytics(ano=ano, meses=meses)
+    q = request.args.get('q', '').strip() or None
+    filtros = {'busca': q} if q else {}
+    dados = get_dashboard_analytics(ano=ano, meses=meses, filtros=filtros)
     anos = listar_anos_pedidos()
     ano_selecionado = ano or dados.get('ano')
-    return render_template('dashboard.html', dados=dados, anos=anos, ano_selecionado=ano_selecionado, meses_selecionados=meses)
+    return render_template(
+        'dashboard.html',
+        dados=dados,
+        anos=anos,
+        ano_selecionado=ano_selecionado,
+        meses_selecionados=meses,
+        q=q
+    )
 
 
 @app.route('/relatorio_operacional.html')
 def rel_operacional():
+    q = request.args.get('q', '').strip() or None
     filtros = {
         'data_inicio': request.args.get('data_inicio'),
         'data_fim': request.args.get('data_fim'),
         'produto': request.args.get('produto'),
         'fornecedor': request.args.get('fornecedor'),
         'categoria': request.args.get('categoria'),
+        'busca': q,
     }
     pagina = request.args.get('pagina', default=1, type=int)
     resultado = get_relatorio_operacional(filtros=filtros, pagina=pagina, por_pagina=10)
@@ -221,6 +238,7 @@ def rel_operacional():
         inicio=resultado['inicio'],
         fim=resultado['fim'],
         total_registros=resultado['total_registros'],
+        q=q,
     )
 
 
@@ -247,6 +265,8 @@ def exportar_operacional():
         'produto': request.args.get('produto'),
         'fornecedor': request.args.get('fornecedor'),
         'categoria': request.args.get('categoria'),
+        'busca': request.args.get('q', '').strip() or None,
+
     }
     csv_data = exportar_operacional_csv(filtros)
     return Response(
