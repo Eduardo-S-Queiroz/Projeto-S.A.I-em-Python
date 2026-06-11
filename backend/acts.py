@@ -426,3 +426,6 @@ def listar_anos_pedidos():
     except mysql.connector.Error as err:
         print(f"Erro ao listar anos: {err}")
         return []
+
+
+

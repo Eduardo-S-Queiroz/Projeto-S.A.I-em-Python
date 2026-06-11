@@ -1,6 +1,6 @@
 import os
 import sys
-from flask import Flask, render_template, request, redirect, url_for, Response
+from flask import Flask, jsonify, render_template, request, redirect, url_for, Response
 from werkzeug.utils import secure_filename
 
 # Configuração de caminhos
@@ -160,6 +160,24 @@ def movimentacoes():
 @app.route('/pedidos.html')
 def pedidos():
     return render_template('pedidos.html', pedidos=lista_pedidos())
+
+@app.route('/pedido/<int:id>/detalhes', methods=['GET'])
+def detalhes_do_pedido(id):
+    return jsonify({
+        "success": True,
+        "total": 150.00, # Exemplo
+        "pedido": {
+            "cliente": "Nome do Cliente",
+            "email": "cliente@email.com",
+            "created_at": "10/06/2026",
+            "status": "Pendente",
+            "shipping_address": "Rua dos Chás, 123"
+        },
+        "items": [
+            { "product_name": "Matcha Premium", "quantity": 2, "unit_price": 45.00, "subtotal": 90.00 },
+            { "product_name": "Sencha Japonês", "quantity": 1, "unit_price": 32.00, "subtotal": 32.00 }
+        ]
+    })
 
 
 @app.route('/dashboard.html')

@@ -1,217 +1,174 @@
-#!/usr/bin/env python3
-"""Simula pedidos para um ano inteiro e escreve CSVs:
-
-- orders.csv: order_id,user_id,created_at,total_price,status
-- order_items.csv: order_id,product_id,quantity,unit_price,subtotal
-
-Uso:
-    python scripts/simulate_orders.py --year 2025 --avg-orders-per-day 20 --output-dir data
-
-Opcional: --seed para reprodutibilidade.
-"""
-import argparse
-import csv
-import os
+import mysql.connector
 import random
-import sys
 import json
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 
-# permitir importar helper de conexão do backend
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
-try:
-    from backend import acts
-except Exception:
-    acts = None
+# Configurações de conexão com o banco de dados
+db_config = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '', # Altere para a sua senha do MySQL
+    'database': 'sai_db'
+}
 
-
-def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days) + 1):
-        yield start_date + timedelta(n)
-
-
-def generate_product_pool(n=50):
-    """Gera um pool de produtos sintéticos (id, price)."""
-    pool = []
-    for i in range(1, n + 1):
-        price = round(random.uniform(5.0, 200.0), 2)
-        pool.append({'id': i, 'price': price})
-    return pool
-
-
-def simulate_year(year, avg_orders_per_day=10, max_items=5, product_pool=None):
-    start = date(year, 1, 1)
-    end = date(year, 12, 31)
-
-    if product_pool is None:
-        product_pool = generate_product_pool(200)
-
-    orders = []
-    items = []
-    order_id = 1
-
-    user_pool = list(range(1, 201))  # ids de usuário simulados
-
-    for d in daterange(start, end):
-        # número de pedidos no dia (Poisson-like via normal com floor)
-        lam = avg_orders_per_day
-        count = max(0, int(random.gauss(lam, max(1, lam * 0.4))))
-        for _ in range(count):
-            created_at = datetime.combine(d, datetime.min.time()) + timedelta(
-                seconds=random.randint(0, 86399)
-            )
-            user_id = random.choice(user_pool)
-            num_items = random.randint(1, max_items)
-            order_total = 0.0
-            for _ in range(num_items):
-                p = random.choice(product_pool)
-                qty = random.randint(1, 5)
-                unit = p['price']
-                subtotal = round(unit * qty, 2)
-                order_total += subtotal
-                items.append({
-                    'order_id': order_id,
-                    'product_id': p['id'],
-                    'quantity': qty,
-                    'unit_price': unit,
-                    'subtotal': subtotal,
-                })
-            order_total = round(order_total, 2)
-            status = random.choices(['completed', 'pending', 'canceled'], weights=[0.85, 0.1, 0.05])[0]
-            orders.append({
-                'order_id': order_id,
-                'user_id': user_id,
-                'created_at': created_at.isoformat(sep=' '),
-                'total_price': order_total,
-                'status': status,
-            })
-            order_id += 1
-
-    return orders, items
-
-
-def write_csvs(orders, items, outdir):
-    os.makedirs(outdir, exist_ok=True)
-    orders_path = os.path.join(outdir, 'orders.csv')
-    items_path = os.path.join(outdir, 'order_items.csv')
-
-    with open(orders_path, 'w', newline='', encoding='utf-8') as f:
-        w = csv.DictWriter(f, fieldnames=['order_id', 'user_id', 'created_at', 'total_price', 'status'])
-        w.writeheader()
-        for o in orders:
-            w.writerow(o)
-
-    with open(items_path, 'w', newline='', encoding='utf-8') as f:
-        w = csv.DictWriter(f, fieldnames=['order_id', 'product_id', 'quantity', 'unit_price', 'subtotal'])
-        w.writeheader()
-        for it in items:
-            w.writerow(it)
-
-    return orders_path, items_path
-
-
-def insert_orders_to_db(orders, items):
-    """Insere orders e cart_items no banco usando backend.acts.conectar_bd().
-
-    Retorna (n_orders, n_items) ou lança exceção em erro.
-    """
-    if acts is None:
-        raise RuntimeError('Módulo backend.acts não disponível — execute o script a partir da raiz do projeto')
-
-    conn = acts.conectar_bd()
-    if not conn:
-        raise RuntimeError('Falha ao conectar ao banco de dados')
-
-    cursor = conn.cursor()
-    order_id_map = {}
-    inserted_orders = 0
-    inserted_items = 0
+def conectar_bd():
     try:
-        # agrupa itens por pedido
-        items_by_order = {}
-        for it in items:
-            items_by_order.setdefault(it['order_id'], []).append(it)
+        conn = mysql.connector.connect(**db_config)
+        return conn
+    except mysql.connector.Error as err:
+        print(f"Erro ao conectar ao banco: {err}")
+        exit(1)
 
-        # Inserir pedidos com campo JSON `items`
-        for o in orders:
-            order_items = items_by_order.get(o['order_id'], [])
-            items_json = json.dumps([
-                {
-                    'product_id': it['product_id'],
-                    'quantity': it['quantity'],
-                    'unit_price': it['unit_price'],
-                    'subtotal': it['subtotal'],
-                } for it in order_items
-            ], ensure_ascii=False)
-            cursor.execute(
-                "INSERT INTO orders (user_id, created_at, total_price, status, items, icms_rate, pis_rate, cofins_rate) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (o['user_id'], o['created_at'], o['total_price'], o['status'], items_json, 0.00, 0.00, 0.00)
-            )
-            db_oid = cursor.lastrowid
-            order_id_map[o['order_id']] = db_oid
-            inserted_orders += 1
+def simular_vendas_ano():
+    conn = conectar_bd()
+    # CORREÇÃO: Adicionado buffered=True para evitar o erro "Unread result found"
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
-        # Inserir linhas em cart_items
-        for src_oid, its in items_by_order.items():
-            db_oid = order_id_map.get(src_oid)
-            if not db_oid:
-                continue
-            for it in its:
-                cursor.execute(
-                    "INSERT INTO cart_items (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)",
-                    (db_oid, it['product_id'], it['quantity'], it['unit_price'])
-                )
-                inserted_items += 1
+    print("🚀 Iniciando simulação de vendas para 1 ano...")
 
-        # Registrar saídas de estoque somente para pedidos concluídos
-        for o in orders:
-            if o.get('status') == 'completed':
-                db_oid = order_id_map.get(o['order_id'])
-                if db_oid:
-                    acts.registrar_saida_estoque_pedido(db_oid, cursor=cursor, conn=conn)
+    # 1. Garantir que existem alguns usuários compradores além do Admin
+    usuarios_ficticios = [
+        ('Lucas Silva', 'lucas@example.com', 'user123'),
+        ('Maria Oliveira', 'maria@example.com', 'user123'),
+        ('João Souza', 'joao@example.com', 'user123'),
+        ('Ana Costa', 'ana@example.com', 'user123'),
+        ('Pedro Rocha', 'pedro@example.com', 'user123')
+    ]
+    
+    for nome, email, senha in usuarios_ficticios:
+        cursor.execute("INSERT IGNORE INTO users (name, email, password) VALUES (%s, %s, %s)", (nome, email, senha))
+    conn.commit()
 
-        conn.commit()
-    except Exception as e:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+    # Buscar IDs de usuários e produtos disponíveis
+    cursor.execute("SELECT id FROM users")
+    user_ids = [row['id'] for row in cursor.fetchall()]
+
+    cursor.execute("SELECT id, name, price, category_id, supplier_id FROM products")
+    produtos = cursor.fetchall()
+
+    if not produtos:
+        print("❌ Nenhum produto encontrado na tabela 'products'. Execute a carga inicial de produtos primeiro.")
         cursor.close()
         conn.close()
-        raise
+        return
+
+    # 2. Configuração do período (Últimos 365 dias até hoje)
+    data_fim = datetime.now()
+    data_inicio = data_fim - timedelta(days=365)
+    
+    total_pedidos_gerados = 0
+
+    # Iterar dia a dia no último ano
+    data_atual = data_inicio
+    while data_atual <= data_fim:
+        vendas_no_dia = random.randint(0, 5)
+
+        for _ in range(vendas_no_dia):
+            user_id = random.choice(user_ids)
+            
+            hora_aleatoria = random.randint(8, 22)
+            minuto_aleatorio = random.randint(0, 59)
+            data_pedido = data_atual.replace(hour=hora_aleatoria, minute=minuto_aleatorio)
+
+            qtd_itens_diferentes = random.randint(1, 4)
+            produtos_carrinho = random.sample(produtos, min(qtd_itens_diferentes, len(produtos)))
+
+            itens_pedido_detalhe = []
+            itens_json = []
+            preco_total_pedido = 0
+
+            for prod in produtos_carrinho:
+                qtd_comprada = random.randint(1, 3)
+                
+                # Verificar se há estoque suficiente antes de vender
+                cursor.execute("SELECT quantity FROM inventory WHERE product_id = %s", (prod['id'],))
+                estoque_atual = cursor.fetchone()
+
+                if not estoque_atual or estoque_atual['quantity'] < qtd_comprada:
+                    # Simula um reabastecimento automático rápido
+                    cursor.execute("""
+                        INSERT INTO inventory (product_id, category_id, supplier_id, quantity, min_stock) 
+                        VALUES (%s, %s, %s, 50, 5)
+                        ON DUPLICATE KEY UPDATE quantity = quantity + 50
+                    """, (prod['id'], prod['category_id'], prod['supplier_id']))
+                    
+                    cursor.execute("""
+                        INSERT INTO stock_movements (product_id, type, quantity, reason, created_at)
+                        VALUES (%s, 'entry', 50, 'Reabastecimento automático simulado', %s)
+                    """, (prod['id'], data_pedido))
+                    
+                    estoque_disponivel = 50
+                else:
+                    estoque_disponivel = estoque_atual['quantity']
+
+                # Deduz do estoque
+                novo_estoque = estoque_disponivel - qtd_comprada
+                cursor.execute("UPDATE inventory SET quantity = %s WHERE product_id = %s", (novo_estoque, prod['id']))
+
+                # Registra a movimentação de saída do estoque
+                cursor.execute("""
+                    INSERT INTO stock_movements (product_id, type, quantity, reason, created_at)
+                    VALUES (%s, 'exit', %s, 'Venda - Pedido Simulado', %s)
+                """, (prod['id'], qtd_comprada, data_pedido))
+
+                subtotal_item = float(prod['price']) * qtd_comprada
+                preco_total_pedido += subtotal_item
+
+                itens_pedido_detalhe.append({
+                    'product_id': prod['id'],
+                    'quantity': qtd_comprada,
+                    'price': float(prod['price'])
+                })
+
+                itens_json.append({
+                    'product_name': prod['name'],
+                    'quantity': qtd_comprada,
+                    'price': float(prod['price']),
+                    'subtotal': subtotal_item
+                })
+
+            if not itens_pedido_detalhe:
+                continue
+
+            icms = 18.00
+            pis = 1.65
+            cofins = 7.60
+            endereco_simulado = f"Rua das Camélias, {random.randint(10, 999)} - São Paulo/SP"
+
+            # 3. Inserir na tabela 'orders'
+            query_order = """
+                INSERT INTO orders (user_id, created_at, status, items, total_price, icms_rate, pis_rate, cofins_rate, shipping_address)
+                VALUES (%s, %s, 'completed', %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query_order, (
+                user_id,
+                data_pedido,
+                json.dumps(itens_json, ensure_ascii=False),
+                preco_total_pedido,
+                icms,
+                pis,
+                cofins,
+                endereco_simulado
+            ))
+            
+            order_id = cursor.lastrowid
+
+            # 4. Inserir na tabela 'cart_items'
+            query_cart_item = """
+                INSERT INTO cart_items (order_id, product_id, quantity, price)
+                VALUES (%s, %s, %s, %s)
+            """
+            for item in itens_pedido_detalhe:
+                cursor.execute(query_cart_item, (order_id, item['product_id'], item['quantity'], item['price']))
+
+            total_pedidos_gerados += 1
+
+        data_atual += timedelta(days=1)
+        conn.commit()
+
     cursor.close()
     conn.close()
-    return inserted_orders, inserted_items
+    print(f"✔️ Simulação concluída com sucesso! Total de {total_pedidos_gerados} pedidos inseridos.")
 
-
-def main():
-    p = argparse.ArgumentParser(description='Simula pedidos para um ano e gera CSVs.')
-    p.add_argument('--year', type=int, default=datetime.now().year, help='Ano a simular')
-    p.add_argument('--avg-orders-per-day', type=float, default=10.0, help='Média de pedidos por dia')
-    p.add_argument('--max-items', type=int, default=5, help='Máximo de itens por pedido')
-    p.add_argument('--output-dir', type=str, default='data', help='Pasta de saída dos CSVs')
-    p.add_argument('--seed', type=int, default=None, help='Seed para RNG')
-    p.add_argument('--insert-db', action='store_true', help='Inserir os pedidos gerados direto no banco de dados')
-    args = p.parse_args()
-
-    if args.seed is not None:
-        random.seed(args.seed)
-
-    print(f"Simulando pedidos para o ano {args.year} (média {args.avg_orders_per_day}/dia)...")
-    orders, items = simulate_year(args.year, args.avg_orders_per_day, args.max_items)
-    o_path, i_path = write_csvs(orders, items, args.output_dir)
-    print(f"Gerado: {o_path} ({len(orders)} pedidos)")
-    print(f"Gerado: {i_path} ({len(items)} itens)")
-
-    if args.insert_db:
-        try:
-            n_o, n_i = insert_orders_to_db(orders, items)
-            print(f"Inserido no DB: {n_o} pedidos e {n_i} itens de pedido")
-        except Exception as e:
-            print(f"Erro ao inserir no DB: {e}")
-
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    simular_vendas_ano()

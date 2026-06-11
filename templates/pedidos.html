@@ -178,7 +178,7 @@
         </main>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function() {
             const overlay = document.getElementById('overlay-detalhes');
             const botaoFechar = document.getElementById('btn-fechar-detalhes');
 
@@ -194,7 +194,13 @@
                     }
 
                     fetch(`/pedido/${pedidoId}/detalhes`)
-                        .then(response => response.json())
+                        .then(response => {
+                            // SE O SERVIDOR RESPONDER COM ERRO (404, 500, etc)
+                            if (!response.ok) {
+                                throw new Error(`O servidor respondeu com status ${response.status} (Rota não encontrada ou erro interno).`);
+                            }
+                            return response.json(); // Só processa se for um JSON válido (Status 200)
+                        })
                         .then(data => {
                             if (!data.success) {
                                 alert(data.message || 'Não foi possível carregar os detalhes do pedido.');
@@ -232,8 +238,8 @@
                             overlay.style.display = 'flex';
                         })
                         .catch(error => {
-                            console.error('Erro ao carregar detalhes do pedido:', error);
-                            alert('Erro ao carregar detalhes do pedido.');
+                            console.error('Erro detalhado da requisição:', error.message);
+                            alert('Erro ao carregar detalhes do pedido. Verifique se a rota "/pedido/ID/detalhes" existe no seu arquivo Python.');
                         });
                 });
             });
