@@ -35,6 +35,8 @@ from acts import (
     listar_anos_pedidos,
     excluir_estoque,
     excluir_produto,
+    buscar_pedido_por_id,
+    buscar_itens_do_pedido,
 )
 from relatorios import (
     get_relatorio_operacional,
@@ -191,24 +193,57 @@ def pedidos():
     q = request.args.get('q', '').strip() or None
     return render_template('pedidos.html', pedidos=lista_pedidos(q=q))
 
+from flask import jsonify, abort
+
+from flask import jsonify, abort
+import mysql.connector
+
+from flask import jsonify, abort
+
 @app.route('/pedido/<int:id>/detalhes', methods=['GET'])
 def detalhes_do_pedido(id):
     """Retorna dados de um pedido em JSON para o modal de detalhes."""
-    return jsonify({
-        "success": True,
-        "total": 150.00, # Exemplo
-        "pedido": {
-            "cliente": "Nome do Cliente",
-            "email": "cliente@email.com",
-            "created_at": "10/06/2026",
-            "status": "Pendente",
-            "shipping_address": "Rua dos Chás, 123"
-        },
-        "items": [
-            { "product_name": "Matcha Premium", "quantity": 2, "unit_price": 45.00, "subtotal": 90.00 },
-            { "product_name": "Sencha Japonês", "quantity": 1, "unit_price": 32.00, "subtotal": 32.00 }
-        ]
-    })
+    try:
+        pedido_banco = buscar_pedido_por_id(id)
+        
+        if not pedido_banco:
+            return jsonify({"success": False, "error": "Pedido não encontrado"}), 404
+            
+        itens_banco = buscar_itens_do_pedido(id)
+        
+        items_formatados = []
+        for item in itens_banco:
+            qtd = int(item.get('quantidade', 0))
+            preco = float(item.get('preco_unitario', 0.0))
+            
+            items_formatados.append({
+                "product_name": item.get('produto_nome', 'Produto sem nome'),
+                "quantity": qtd,
+                "unit_price": preco,
+                "subtotal": float(qtd * preco)
+            })
+        
+        data_crua = pedido_banco.get('created_at')
+        data_formatada = data_crua.strftime('%d/%m/%Y') if hasattr(data_crua, 'strftime') else str(data_crua) if data_crua else "N/A"
+    
+        return jsonify({
+            "success": True,
+            # 'total_price' bate exatamente com o seu script SQL
+            "total": float(pedido_banco.get('total_price', 0.0)), 
+            "pedido": {
+                "cliente": pedido_banco.get('cliente_nome', 'N/A'),
+                "email": pedido_banco.get('cliente_email', 'N/A'),
+                "created_at": data_formatada,
+                "status": pedido_banco.get('status', 'pending'),
+                # 'shipping_address' mapeado corretamente
+                "shipping_address": pedido_banco.get('shipping_address', 'Não informado')
+            },
+            "items": items_formatados
+        })
+
+    except Exception as e:
+        print(f"Erro interno na rota de detalhes: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route('/dashboard.html')

@@ -554,3 +554,53 @@ def excluir_estoque(id):
         except Exception:
             pass
         return False
+
+
+# --- ADICIONE ESTAS FUNÇÕES AO FINAL DO SEU ARQUIVO DE BANCO DE DADOS ---
+
+def buscar_pedido_por_id(pedido_id):
+    """Busca os dados principais de um pedido e do cliente associado pelo ID do pedido."""
+    conn = conectar_bd()
+    if not conn:
+        return None
+    try:
+        # Usamos dictionary=True para retornar como um dicionário chave-valor
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT o.*, u.name AS cliente_nome, u.email AS cliente_email
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            WHERE o.id = %s
+        """
+        cursor.execute(query, (pedido_id,))
+        res = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return res  # Retorna o dicionário com os dados ou None se não achar
+    except mysql.connector.Error as err:
+        print(f"Erro ao buscar pedido por ID: {err}")
+        return None
+
+
+def buscar_itens_do_pedido(pedido_id):
+    """Retorna a lista de itens/produtos que pertencem a um pedido específico."""
+    conn = conectar_bd()
+    if not conn:
+        return []
+    try:
+        cursor = conn.cursor(dictionary=True)
+        # Query ajustada perfeitamente para a sua tabela 'cart_items'
+        query = """
+            SELECT ci.quantity AS quantidade, ci.price AS preco_unitario, p.name AS produto_nome
+            FROM cart_items ci
+            JOIN products p ON ci.product_id = p.id
+            WHERE ci.order_id = %s
+        """
+        cursor.execute(query, (pedido_id,))
+        res = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return res  # Retorna a lista correta de itens
+    except mysql.connector.Error as err:
+        print(f"Erro ao buscar itens do pedido: {err}")
+        return []
