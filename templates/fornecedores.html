@@ -43,6 +43,7 @@
                     <h1>Fornecedores</h1>
                     <p>Cadastre, edite e exclua fornecedores usados no estoque dos produtos.</p>
                 </div>
+                <!-- Busca de fornecedores: envia o termo q para a rota refs e mantém o campo preenchido com o termo atual -->
                 <form class="header-search" method="GET" action="" role="search">
                     <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -102,12 +103,43 @@
         </div>
     </div>
     <script>
-        function abrirModalFornecedor() { document.getElementById('formFornecedor').reset(); document.getElementById('modalTitulo').innerText = 'Novo Fornecedor'; document.getElementById('fornecedorAction').value = 'add'; document.getElementById('fornecedorId').value = ''; document.getElementById('modalFornecedor').style.display = 'block' }
-        function fecharModalFornecedor() { document.getElementById('modalFornecedor').style.display = 'none' }
-        function fecharModalExcluirFornecedor() { document.getElementById('modalExcluirFornecedor').style.display = 'none' }
-        document.querySelectorAll('.js-editar-fornecedor').forEach(btn => btn.addEventListener('click', () => { document.getElementById('modalTitulo').innerText = 'Editar Fornecedor'; document.getElementById('fornecedorAction').value = 'edit'; document.getElementById('fornecedorId').value = btn.dataset.id; document.getElementById('fornecedorName').value = btn.dataset.name; document.getElementById('modalFornecedor').style.display = 'block' }));
-        document.querySelectorAll('.js-excluir-fornecedor').forEach(btn => btn.addEventListener('click', () => { document.getElementById('fornecedorDeleteId').value = btn.dataset.id; document.getElementById('modalExcluirFornecedor').style.display = 'block' }));
-        window.addEventListener('click', e => { ['modalFornecedor', 'modalExcluirFornecedor'].forEach(id => { const m = document.getElementById(id); if (e.target === m) m.style.display = 'none'; }); });
+        // JS de fornecedores: controla os modais para criar, editar e confirmar exclusão.
+        function abrirModalFornecedor() {
+            document.getElementById('formFornecedor').reset();
+            document.getElementById('modalTitulo').innerText = 'Novo Fornecedor';
+            document.getElementById('fornecedorAction').value = 'add';
+            document.getElementById('fornecedorId').value = '';
+            document.getElementById('modalFornecedor').style.display = 'block';
+        }
+
+        function fecharModalFornecedor() {
+            document.getElementById('modalFornecedor').style.display = 'none';
+        }
+
+        function fecharModalExcluirFornecedor() {
+            document.getElementById('modalExcluirFornecedor').style.display = 'none';
+        }
+
+        document.querySelectorAll('.js-editar-fornecedor').forEach(btn => btn.addEventListener('click', () => {
+            document.getElementById('modalTitulo').innerText = 'Editar Fornecedor';
+            document.getElementById('fornecedorAction').value = 'edit';
+            document.getElementById('fornecedorId').value = btn.dataset.id;
+            document.getElementById('fornecedorName').value = btn.dataset.name;
+            document.getElementById('modalFornecedor').style.display = 'block';
+        }));
+
+        document.querySelectorAll('.js-excluir-fornecedor').forEach(btn => btn.addEventListener('click', () => {
+            document.getElementById('fornecedorDeleteId').value = btn.dataset.id;
+            document.getElementById('modalExcluirFornecedor').style.display = 'block';
+        }));
+
+        // Fecha o modal ao clicar fora do conteúdo.
+        window.addEventListener('click', e => {
+            ['modalFornecedor', 'modalExcluirFornecedor'].forEach(id => {
+                const m = document.getElementById(id);
+                if (e.target === m) m.style.display = 'none';
+            });
+        });
     </script>
     <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
     <style>

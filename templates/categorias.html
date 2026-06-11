@@ -44,6 +44,7 @@
                     <h1>Categorias</h1>
                     <p>Cadastre, edite e exclua categorias usadas no controle de estoque dos chás.</p>
                 </div>
+                <!-- Busca de categorias: envia o termo q como query string para o backend filtrar nomes de categorias -->
                 <form class="header-search" method="GET" action="" role="search">
                     <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -102,12 +103,43 @@
         </div>
     </div>
     <script>
-        function abrirModalCategoria() { document.getElementById('formCategoria').reset(); document.getElementById('modalTitulo').innerText = 'Nova Categoria'; document.getElementById('categoriaAction').value = 'add'; document.getElementById('categoriaId').value = ''; document.getElementById('modalCategoria').style.display = 'block' }
-        function fecharModalCategoria() { document.getElementById('modalCategoria').style.display = 'none' }
-        function fecharModalExcluirCategoria() { document.getElementById('modalExcluirCategoria').style.display = 'none' }
-        document.querySelectorAll('.js-editar-categoria').forEach(btn => btn.addEventListener('click', () => { document.getElementById('modalTitulo').innerText = 'Editar Categoria'; document.getElementById('categoriaAction').value = 'edit'; document.getElementById('categoriaId').value = btn.dataset.id; document.getElementById('categoriaName').value = btn.dataset.name; document.getElementById('modalCategoria').style.display = 'block' }));
-        document.querySelectorAll('.js-excluir-categoria').forEach(btn => btn.addEventListener('click', () => { document.getElementById('categoriaDeleteId').value = btn.dataset.id; document.getElementById('modalExcluirCategoria').style.display = 'block' }));
-        window.addEventListener('click', e => { ['modalCategoria', 'modalExcluirCategoria'].forEach(id => { const m = document.getElementById(id); if (e.target === m) m.style.display = 'none'; }); });
+        // JS de categorias: controla modais de cadastro, edição e exclusão.
+        function abrirModalCategoria() {
+            document.getElementById('formCategoria').reset();
+            document.getElementById('modalTitulo').innerText = 'Nova Categoria';
+            document.getElementById('categoriaAction').value = 'add';
+            document.getElementById('categoriaId').value = '';
+            document.getElementById('modalCategoria').style.display = 'block';
+        }
+
+        function fecharModalCategoria() {
+            document.getElementById('modalCategoria').style.display = 'none';
+        }
+
+        function fecharModalExcluirCategoria() {
+            document.getElementById('modalExcluirCategoria').style.display = 'none';
+        }
+
+        document.querySelectorAll('.js-editar-categoria').forEach(btn => btn.addEventListener('click', () => {
+            document.getElementById('modalTitulo').innerText = 'Editar Categoria';
+            document.getElementById('categoriaAction').value = 'edit';
+            document.getElementById('categoriaId').value = btn.dataset.id;
+            document.getElementById('categoriaName').value = btn.dataset.name;
+            document.getElementById('modalCategoria').style.display = 'block';
+        }));
+
+        document.querySelectorAll('.js-excluir-categoria').forEach(btn => btn.addEventListener('click', () => {
+            document.getElementById('categoriaDeleteId').value = btn.dataset.id;
+            document.getElementById('modalExcluirCategoria').style.display = 'block';
+        }));
+
+        // Fecha o modal ao clicar fora do conteúdo.
+        window.addEventListener('click', e => {
+            ['modalCategoria', 'modalExcluirCategoria'].forEach(id => {
+                const m = document.getElementById(id);
+                if (e.target === m) m.style.display = 'none';
+            });
+        });
     </script>
     <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
     <style>

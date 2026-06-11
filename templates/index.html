@@ -47,6 +47,7 @@
                     <h1>Gerenciamento de Produtos</h1>
                     <p>Controle a vitrine do e-commerce de chás: aparência, descrição, preço e imagem.</p>
                 </div>
+                <!-- Busca de produtos: preserva o termo atual no campo e funciona via GET -->
                 <form class="header-search" method="GET" action="" role="search">
                     <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar produtos..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -152,6 +153,7 @@
     </div>
 
     <script>
+        // JS de produto: abre e posiciona o modal para cadastro ou edição.
         function abrirModalProduto() {
             const form = document.getElementById('formProduto');
             form.reset();
@@ -160,7 +162,11 @@
             document.getElementById('formId').value = '';
             document.getElementById('modalProduto').style.display = 'block';
         }
-        function fecharModalProduto() { document.getElementById('modalProduto').style.display = 'none'; }
+
+        function fecharModalProduto() {
+            document.getElementById('modalProduto').style.display = 'none';
+        }
+
         function editarProduto(btn) {
             document.getElementById('modalTitle').innerText = 'Editar Produto';
             document.getElementById('formAction').value = 'edit';
@@ -172,7 +178,10 @@
             document.getElementById('formFeatured').checked = btn.dataset.featured === '1';
             document.getElementById('modalProduto').style.display = 'block';
         }
+
         document.querySelectorAll('.js-editar-produto').forEach(btn => btn.addEventListener('click', () => editarProduto(btn)));
+
+        // Fecha o modal ao clicar fora do seu conteúdo.
         window.addEventListener('click', (event) => {
             const modal = document.getElementById('modalProduto');
             if (event.target === modal) fecharModalProduto();

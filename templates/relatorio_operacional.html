@@ -43,6 +43,7 @@
                     <h1>Relatório de Vendas Operacional</h1>
                     <p>Consulta detalhada por pedido, produto, categoria, fornecedor e impostos.</p>
                 </div>
+                <!-- Busca global do relatório operacional: o termo q é enviado na query string e preservado nos filtros -->
                 <form class="header-search" method="GET" action="" role="search">
                     <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar relatório..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -134,26 +135,27 @@
         </main>
     </div>
     <script>
+        // Funções de tabela do relatório operacional: busca interna e ordenação por coluna.
         function filtrarTabela() {
-        const termo = document.getElementById('buscaTabela').value.toLowerCase();
-        const linhas = document.querySelectorAll('#tabelaRelatorio tbody tr');
+            const termo = document.getElementById('buscaTabela').value.toLowerCase();
+            const linhas = document.querySelectorAll('#tabelaRelatorio tbody tr');
 
-        linhas.forEach(tr => {
-            tr.style.display = tr.innerText.toLowerCase().includes(termo) ? '' : 'none';
-        });
+            linhas.forEach(tr => {
+                tr.style.display = tr.innerText.toLowerCase().includes(termo) ? '' : 'none';
+            });
         }
 
         function ordenarTabela(n) {
-        const table = document.getElementById('tabelaRelatorio');
-        const tbody = table.tBodies[0];
-        const linhasArray = Array.from(tbody.rows);
+            const table = document.getElementById('tabelaRelatorio');
+            const tbody = table.tBodies[0];
+            const linhasArray = Array.from(tbody.rows);
 
-        linhasArray.sort((a, b) => {
-            return a.cells[n].innerText.localeCompare(b.cells[n].innerText, 'pt-BR', { numeric: true });
-        });
+            linhasArray.sort((a, b) => {
+                return a.cells[n].innerText.localeCompare(b.cells[n].innerText, 'pt-BR', { numeric: true });
+            });
 
-        linhasArray.forEach(r => tbody.appendChild(r));
-        }    
+            linhasArray.forEach(r => tbody.appendChild(r));
+        }
     </script>
     <script src="{{ url_for('static', filename='acessibilidade.js') }}"></script>
     <style>

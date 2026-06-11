@@ -105,6 +105,7 @@
                     <h1>Gerenciamento de Pedidos</h1>
                     <p>Histórico de vendas e faturamento.</p>
                 </div>
+                <!-- Busca de pedidos: o termo q é enviado para a rota e usado pelo backend para filtrar nome, email e status -->
                 <form class="header-search" method="GET" action="" role="search">
                     <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar pedidos..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -146,6 +147,7 @@
                 <div class="modal-detalhes">
                     <div class="modal-detalhes-cabecalho">
                         <h2>Detalhes do Pedido</h2>
+                        <!-- O modal de detalhes usa requisição AJAX/JSON para buscar informações do pedido no backend -->
                         <button type="button" id="btn-fechar-detalhes" class="btn-fechar"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="modal-detalhes-conteudo">
@@ -178,6 +180,7 @@
         </main>
     </div>
     <script>
+            // JS de pedidos: busca detalhes via AJAX e exibe o modal de pedidos.
             document.addEventListener('DOMContentLoaded', function() {
             const overlay = document.getElementById('overlay-detalhes');
             const botaoFechar = document.getElementById('btn-fechar-detalhes');

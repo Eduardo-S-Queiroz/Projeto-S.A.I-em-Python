@@ -3,7 +3,7 @@ import sys
 from flask import Flask, jsonify, render_template, request, redirect, url_for, Response
 from werkzeug.utils import secure_filename
 
-# Configuração de caminhos
+# Configuração de caminhos para templates, arquivos estáticos e uploads.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 TEMPLATES_DIR = os.path.join(PROJECT_ROOT, 'templates')
@@ -47,7 +47,8 @@ from relatorios import (
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-
+# Helper para salvar imagens de produto enviadas pelo formulário.
+# Retorna o caminho relativo dentro de static/ para ser usado no campo image_path.
 def salvar_upload_imagem(campo='image_file'):
     """Salva arquivo enviado e retorna caminho relativo dentro de static/."""
     if campo not in request.files:
@@ -63,6 +64,11 @@ def salvar_upload_imagem(campo='image_file'):
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    """Rota de login principal.
+
+    - GET: renderiza o formulário de login.
+    - POST: valida as credenciais e redireciona para o dashboard de produtos.
+    """
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -74,6 +80,7 @@ def login():
 
 @app.route('/index.html')
 def index():
+    """Mostra a lista de produtos e permite busca de produtos por nome/descrição."""
     q = request.args.get('q', '').strip() or None
     return render_template(
         'index.html',
@@ -85,6 +92,7 @@ def index():
 
 @app.route('/produtos', methods=['POST'])
 def produtos_actions():
+    """Processa ações de CRUD de produtos enviadas pelo formulário."""
     action = request.form.get('action')
     product_id = request.form.get('id')
     name = request.form.get('name')
@@ -105,6 +113,7 @@ def produtos_actions():
 
 @app.route('/estoque.html')
 def estoque():
+    """Rota para exibir o estoque com busca opcional."""
     q = request.args.get('q', '').strip() or None
     return render_template(
         'estoque.html',
@@ -117,6 +126,7 @@ def estoque():
 
 @app.route('/estoque/salvar', methods=['POST'])
 def estoque_salvar():
+    """Recebe o formulário de estoque e persiste a alteração no banco."""
     product_id = request.form.get('product_id')
     category_id = request.form.get('category_id')
     supplier_id = request.form.get('supplier_id')
@@ -126,6 +136,7 @@ def estoque_salvar():
 
 @app.route('/estoque/excluir', methods=['POST'])
 def excluir_estoque_route():
+    """Recebe o pedido de exclusão de um registro de estoque."""
     stock_id = request.form.get('id')
     excluir_estoque(stock_id)
     return redirect(url_for('estoque'))
@@ -133,6 +144,7 @@ def excluir_estoque_route():
 
 @app.route('/categorias.html', methods=['GET', 'POST'])
 def categorias():
+    """Mostra o cadastro de categorias e processa criação/edição/exclusão."""
     if request.method == 'POST':
         action = request.form.get('action')
         category_id = request.form.get('id')
@@ -150,6 +162,7 @@ def categorias():
 
 @app.route('/fornecedores.html', methods=['GET', 'POST'])
 def fornecedores():
+    """Mostra a página de fornecedores e processa criação/edição/exclusão."""
     if request.method == 'POST':
         action = request.form.get('action')
         supplier_id = request.form.get('id')
@@ -167,17 +180,20 @@ def fornecedores():
 
 @app.route('/movimentacoes.html')
 def movimentacoes():
+    """Exibe o histórico de movimentações de estoque, com busca opcional."""
     q = request.args.get('q', '').strip() or None
     return render_template('movimentacoes.html', movs=listar_movimentacoes(q=q))
 
 
 @app.route('/pedidos.html')
 def pedidos():
+    """Exibe a lista de pedidos e aplica busca por cliente, email ou status."""
     q = request.args.get('q', '').strip() or None
     return render_template('pedidos.html', pedidos=lista_pedidos(q=q))
 
 @app.route('/pedido/<int:id>/detalhes', methods=['GET'])
 def detalhes_do_pedido(id):
+    """Retorna dados de um pedido em JSON para o modal de detalhes."""
     return jsonify({
         "success": True,
         "total": 150.00, # Exemplo
@@ -197,6 +213,7 @@ def detalhes_do_pedido(id):
 
 @app.route('/dashboard.html')
 def dashboard():
+    """Renderiza a página de dashboard com gráficos e filtros por ano/mês."""
     ano = request.args.get('ano', type=int)
     meses = request.args.getlist('mes', type=int)
     q = request.args.get('q', '').strip() or None
@@ -216,6 +233,7 @@ def dashboard():
 
 @app.route('/relatorio_operacional.html')
 def rel_operacional():
+    """Renderiza o relatório operacional com filtros, pesquisa e paginação."""
     q = request.args.get('q', '').strip() or None
     filtros = {
         'data_inicio': request.args.get('data_inicio'),
@@ -244,6 +262,7 @@ def rel_operacional():
 
 @app.route('/relatorio_mensal.html')
 def rel_mensal():
+    """Renderiza o relatório mensal com filtros de ano e meses."""
     ano = request.args.get('ano', type=int)
     meses = request.args.getlist('mes', type=int)
     resultado = get_relatorio_mensal(ano=ano, meses=meses)
@@ -259,6 +278,7 @@ def rel_mensal():
 
 @app.route('/exportar_operacional')
 def exportar_operacional():
+    """Gera e envia o relatório operacional em formato CSV."""
     filtros = {
         'data_inicio': request.args.get('data_inicio'),
         'data_fim': request.args.get('data_fim'),
@@ -266,7 +286,6 @@ def exportar_operacional():
         'fornecedor': request.args.get('fornecedor'),
         'categoria': request.args.get('categoria'),
         'busca': request.args.get('q', '').strip() or None,
-
     }
     csv_data = exportar_operacional_csv(filtros)
     return Response(
@@ -278,6 +297,7 @@ def exportar_operacional():
 
 @app.route('/exportar_mensal')
 def exportar_mensal():
+    """Gera e envia o relatório mensal em formato CSV."""
     ano = request.args.get('ano', type=int)
     meses = request.args.getlist('mes', type=int)
     csv_data = exportar_mensal_csv(ano=ano, meses=meses)
@@ -289,4 +309,5 @@ def exportar_mensal():
 
 
 if __name__ == "__main__":
+    # Inicia o servidor Flask em modo debug na porta 5000.
     app.run(debug=True, port=5000)

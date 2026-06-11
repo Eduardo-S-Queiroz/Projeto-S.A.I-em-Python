@@ -44,6 +44,7 @@
                     <h1>Controle de Estoque</h1>
                     <p>Vincule produtos já cadastrados a categoria, fornecedor e quantidade.</p>
                 </div>
+                <!-- Busca de estoque: o backend filtra produto, categoria, fornecedor ou quantidade -->
                 <form class="header-search" method="GET" action="" role="search">
                     <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar estoque..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -154,6 +155,7 @@
     </div>
 
     <script>
+        // JS de estoque: controla abertura e preenchimento do modal de inventário.
         function abrirModalEstoque() {
             document.getElementById('formEstoque').reset();
             document.getElementById('stockInventoryId').value = '';
@@ -162,7 +164,11 @@
             document.getElementById('stockProductId').disabled = false;
             document.getElementById('modalEstoque').style.display = 'block';
         }
-        function fecharModalEstoque() { document.getElementById('modalEstoque').style.display = 'none'; }
+
+        function fecharModalEstoque() {
+            document.getElementById('modalEstoque').style.display = 'none';
+        }
+
         function editarEstoque(btn) {
             document.getElementById('modalEstoqueTitulo').innerText = 'Editar Estoque do Produto';
             document.getElementById('stockInventoryId').value = btn.dataset.inventoryId || '';
@@ -174,7 +180,10 @@
             document.getElementById('stockQuantity').value = btn.dataset.quantity || 0;
             document.getElementById('modalEstoque').style.display = 'block';
         }
+
         document.querySelectorAll('.js-editar-estoque').forEach(btn => btn.addEventListener('click', () => editarEstoque(btn)));
+
+        // Fecha o modal ao clicar fora do seu conteúdo.
         window.addEventListener('click', (event) => {
             const modal = document.getElementById('modalEstoque');
             if (event.target === modal) fecharModalEstoque();

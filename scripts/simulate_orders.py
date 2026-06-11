@@ -3,7 +3,7 @@ import random
 import json
 from datetime import datetime, timedelta
 
-# Configurações de conexão com o banco de dados
+# Configurações de conexão com o banco de dados para a simulação de vendas.
 db_config = {
     'host': 'localhost',
     'user': 'root',
@@ -12,6 +12,7 @@ db_config = {
 }
 
 def conectar_bd():
+    """Cria a conexão MySQL usada somente para a simulação de pedidos."""
     try:
         conn = mysql.connector.connect(**db_config)
         return conn
@@ -20,8 +21,9 @@ def conectar_bd():
         exit(1)
 
 def simular_vendas_ano():
+    """Gera pedidos fictícios e atualiza estoque/movimentações para testar relatórios."""
     conn = conectar_bd()
-    # CORREÇÃO: Adicionado buffered=True para evitar o erro "Unread result found"
+    # Usa cursor bufferizado para permitir múltiplas consultas sem erro de resultados não lidos.
     cursor = conn.cursor(dictionary=True, buffered=True)
 
     print("🚀 Iniciando simulação de vendas para 1 ano...")

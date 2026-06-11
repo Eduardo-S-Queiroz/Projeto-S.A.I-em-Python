@@ -3,10 +3,16 @@ import mysql.connector
 import uuid
 from dotenv import load_dotenv
 
+# Carrega variáveis de ambiente do arquivo .env.
 load_dotenv()
 
 
 def conectar_bd():
+    """Abre a conexão com o banco de dados MySQL.
+
+    Usa as variáveis de ambiente: DB_HOST, DB_USER, DB_PASSWORD e DB_NAME.
+    Retorna None em caso de falha de conexão.
+    """
     db_config = {
         'host': os.getenv('DB_HOST', 'localhost'),
         'user': os.getenv('DB_USER'),
@@ -21,6 +27,10 @@ def conectar_bd():
 
 
 def executar_escrita(query, params=()):
+    """Executa comandos SQL de escrita e trata commit/rollback.
+
+    Usada por funções CRUD que não precisam retornar dados.
+    """
     conn = conectar_bd()
     if not conn:
         return False
@@ -43,6 +53,10 @@ def executar_escrita(query, params=()):
 
 # --- USUÁRIOS ---
 def verificar_login(email, password):
+    """Verifica se o email e senha existem no banco de dados.
+
+    Atenção: senha é comparada em texto simples no schema atual.
+    """
     conn = conectar_bd()
     if not conn:
         return False
@@ -60,6 +74,7 @@ def verificar_login(email, password):
 
 # --- PRODUTOS (Controle Geral: aparência, descrição, preço e imagem) ---
 def listar_produtos(q=None):
+    """Retorna a lista de produtos, opcionalmente filtrando por termo de busca."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -83,6 +98,7 @@ def listar_produtos(q=None):
 
 
 def cadastrar_produto(name, description, price, image_url=None, image_path=None, featured=0):
+    """Insere um novo produto no banco com código único e slug gerado."""
     code = str(uuid.uuid4())
     slug = (name or "produto").lower().replace(" ", "-") + "-" + str(uuid.uuid4())[:8]
     conn = conectar_bd()
@@ -105,6 +121,7 @@ def cadastrar_produto(name, description, price, image_url=None, image_path=None,
 
 
 def atualizar_produto(id, name, description, price, image_url=None, image_path=None, featured=0):
+    """Atualiza os dados do produto, preservando imagem se não houver upload novo."""
     conn = conectar_bd()
     if not conn:
         return False
@@ -136,6 +153,7 @@ def atualizar_produto(id, name, description, price, image_url=None, image_path=N
 
 # --- ESTOQUE (quantidade, categoria e fornecedor vinculados ao produto) ---
 def listar_estoque(q=None):
+    """Retorna o inventário com dados de produto, categoria e fornecedor."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -177,6 +195,7 @@ def listar_estoque(q=None):
 
 
 def salvar_estoque(product_id, category_id, supplier_id, quantity):
+    """Cria ou atualiza o registro de estoque e registra movimentações relacionadas."""
     conn = conectar_bd()
     if not conn:
         return False
@@ -186,6 +205,7 @@ def salvar_estoque(product_id, category_id, supplier_id, quantity):
         cursor.execute("SELECT id, quantity FROM inventory WHERE product_id = %s", (product_id,))
         res = cursor.fetchone()
         if res:
+            # Atualiza estoque existente e registra ajuste se a quantidade mudou.
             old_qty = int(res[1] or 0)
             cursor.execute(
                 "UPDATE inventory SET category_id=%s, supplier_id=%s, quantity=%s WHERE product_id=%s",
@@ -199,6 +219,7 @@ def salvar_estoque(product_id, category_id, supplier_id, quantity):
                     (product_id, m_type, m_qty, "Ajuste manual de estoque")
                 )
         else:
+            # Insere novo inventário e registra entrada inicial se houver saldo.
             cursor.execute(
                 "INSERT INTO inventory (product_id, category_id, supplier_id, quantity) VALUES (%s, %s, %s, %s)",
                 (product_id, category_id or None, supplier_id or None, quantity)
@@ -224,6 +245,7 @@ def salvar_estoque(product_id, category_id, supplier_id, quantity):
 
 # --- MOVIMENTAÇÕES ---
 def listar_movimentacoes(q=None):
+    """Retorna o histórico de movimentações de estoque, com busca opcional."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -266,6 +288,7 @@ def listar_movimentacoes(q=None):
 
 # --- CATEGORIAS ---
 def listar_categorias(q=None):
+    """Retorna categorias cadastradas, com filtro opcional por nome."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -294,6 +317,7 @@ def atualizar_categoria(id, name):
 
 
 def excluir_categoria(id):
+    """Exclui uma categoria e remove a referência no inventário."""
     conn = conectar_bd()
     if not conn:
         return False
@@ -317,6 +341,7 @@ def excluir_categoria(id):
 
 # --- FORNECEDORES ---
 def listar_fornecedores(q=None):
+    """Retorna fornecedores cadastrados, com filtro opcional por nome."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -337,10 +362,12 @@ def listar_fornecedores(q=None):
 
 
 def cadastrar_fornecedor(name):
+    """Insere um novo fornecedor no banco de dados."""
     return executar_escrita("INSERT INTO suppliers (name) VALUES (%s)", (name,))
 
 
 def atualizar_fornecedor(id, name):
+    """Atualiza o nome de um fornecedor existente."""
     return executar_escrita("UPDATE suppliers SET name=%s WHERE id=%s", (name, id))
 
 
@@ -368,6 +395,7 @@ def excluir_fornecedor(id):
 
 # --- PEDIDOS ---
 def lista_pedidos(q=None):
+    """Retorna pedidos com dados de cliente, permitindo busca por cliente, email ou status."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -403,6 +431,7 @@ def lista_pedidos(q=None):
 
 
 def obter_nome_cliente(user_id):
+    """Retorna o nome do cliente pelo ID do usuário."""
     conn = conectar_bd()
     if not conn:
         return "N/A"
@@ -418,6 +447,7 @@ def obter_nome_cliente(user_id):
 
 
 def obter_email(user_id):
+    """Retorna o email do usuário pelo ID."""
     conn = conectar_bd()
     if not conn:
         return "N/A"
@@ -433,6 +463,7 @@ def obter_email(user_id):
 
 
 def obter_nome_categoria(id):
+    """Retorna o nome da categoria pelo seu ID."""
     conn = conectar_bd()
     if not conn:
         return "N/A"
@@ -448,6 +479,7 @@ def obter_nome_categoria(id):
 
 
 def obter_nome_fornecedor(id):
+    """Retorna o nome do fornecedor pelo ID."""
     conn = conectar_bd()
     if not conn:
         return "N/A"
@@ -464,6 +496,7 @@ def obter_nome_fornecedor(id):
 
 # --- HELPERS DE DASH/RELATÓRIO ---
 def listar_anos_pedidos():
+    """Retorna os anos distintos dos pedidos registrados no sistema."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -480,6 +513,7 @@ def listar_anos_pedidos():
 
 
 def excluir_produto(id):
+    """Remove um produto e seu registro de estoque associado."""
     conn = conectar_bd()
     if not conn:
         return False
@@ -501,6 +535,7 @@ def excluir_produto(id):
         return False
     
 def excluir_estoque(id):
+    """Remove um item do inventário pelo seu ID."""
     conn = conectar_bd()
     if not conn:
         return False

@@ -44,6 +44,7 @@
                     <h1>Dashboard Analítico</h1>
                     <p>Visão executiva do e-commerce, com filtros, cartões e gráficos interativos.</p>
                 </div>
+                <!-- Busca no dashboard: envia o termo como query string para a rota atual -->
                 <form class="header-search" method="GET" action="" role="search">
                     <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Pesquisar..." aria-label="Pesquisar">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -105,6 +106,8 @@
         </main>
     </div>
     <script>
+        // Plotly JSON é gerado no backend e entregue ao frontend via Jinja
+        // Cada gráfico já vem com dados e layout prontos para renderização.
         const cfg = {
             responsive: true,
             displaylogo: false,

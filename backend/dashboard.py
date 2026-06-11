@@ -2,17 +2,18 @@ import pandas as pd
 from mysql.connector import Error
 from acts import conectar_bd
 
+# Utilitário de análise de dados com Pandas. Não é usado diretamente nas rotas Flask.
 def get_data_from_db():
     try:
         connection = conectar_bd()
         if connection is None or not connection.is_connected():
             raise Error("Falha ao conectar ao banco de dados")
 
-        # 1. Carregar Pedidos
+        # 1. Carrega todos os pedidos
         query_orders = "SELECT * FROM orders"
         df_orders = pd.read_sql(query_orders, connection)
 
-        # 2. Carregar Produtos e Categorias
+        # 2. Carrega produtos e sua categoria
         query_products = """
             SELECT p.*, c.name as category_name 
             FROM products p 
@@ -20,7 +21,7 @@ def get_data_from_db():
         """
         df_products = pd.read_sql(query_products, connection)
 
-        # Converter preços de centavos para Reais (baseado no comentário do SQL)
+        # Converte colunas monetárias para float para análise.
         df_orders['total_price'] = df_orders['total_price'].astype(float)
         df_products['price'] = df_products['price'].astype(float) 
 

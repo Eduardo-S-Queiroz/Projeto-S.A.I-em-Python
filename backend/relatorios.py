@@ -14,6 +14,8 @@ from math import ceil
 import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 
+# Relatórios usam Plotly para criar gráficos no backend e gerar CSVs em memória.
+
 from acts import conectar_bd
 
 # Tradução dos números dos meses para nomes em português.
@@ -49,7 +51,7 @@ def _plotly_json(fig):
 
 
 def _fetchall(query, params=None):
-    """Executa a consulta SQL e retorna todas as linhas como dicionários."""
+    """Executa uma query SQL e retorna o resultado como lista de dicionários."""
     conn = conectar_bd()
     if not conn:
         return []
@@ -71,7 +73,7 @@ def _fetchall(query, params=None):
 
 
 def _montar_where(filtros=None, ano=None, meses=None):
-    """Monta a cláusula WHERE dinâmica para os filtros e retorna parâmetros."""
+    """Monta dinamicamente a cláusula WHERE e os parâmetros para a query de relatórios."""
     filtros = filtros or {}
     where = []
     params = []
@@ -114,7 +116,7 @@ def _montar_where(filtros=None, ano=None, meses=None):
 
 
 def _base_query(where_sql=''):
-    """Retorna a query SQL base para os relatórios, com joins necessários."""
+    """Retorna a query SQL base para relatórios com as junções entre tabelas."""
     return f"""
         SELECT o.id AS pedido_id, o.created_at AS data_pedido, o.status AS status_pedido,
                u.name AS cliente, u.email AS email, p.id AS product_id, p.name AS produto,
@@ -138,7 +140,7 @@ def _base_query(where_sql=''):
 
 
 def _totalizadores(rows):
-    """Calcula totais agregados usados em relatórios e no dashboard."""
+    """Calcula valores agregados de faturamento, impostos e ticket médio."""
     total_bruto = sum(float(r.get('valor_bruto') or 0) for r in rows)
     total_liquido = sum(float(r.get('valor_liquido') or 0) for r in rows)
     impostos = sum(
@@ -161,7 +163,7 @@ def _totalizadores(rows):
 
 
 def get_relatorio_operacional(filtros=None, pagina=1, por_pagina=10):
-    """Retorna dados paginados do relatório operacional e totais gerais."""
+    """Retorna os dados do relatório operacional com paginação e totais gerais."""
     where_sql, params = _montar_where(filtros=filtros)
     rows = _fetchall(
         _base_query(where_sql) + ' ORDER BY o.created_at DESC, o.id DESC',
@@ -187,7 +189,7 @@ def get_relatorio_operacional(filtros=None, pagina=1, por_pagina=10):
 
 
 def get_relatorio_mensal(ano=None, meses=None):
-    """Gera relatório mensais agregando por mês e calculando margens."""
+    """Gera o relatório mensal agregando dados por mês."""
     if not ano:
         ano = datetime.now().year
 
@@ -233,7 +235,7 @@ def get_relatorio_mensal(ano=None, meses=None):
 
 
 def get_dashboard_analytics(ano=None, meses=None, filtros=None):
-    """Gera os valores e gráficos necessários para o dashboard principal."""
+    """Gera métricas e gráficos para o dashboard da aplicação."""
     if not ano:
         ano = datetime.now().year
 

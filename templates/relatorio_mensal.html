@@ -79,6 +79,8 @@
 <section class="relatorio-card"><div class="barra-tabela-projeto2"><div>Detalhamento mensal</div><input type="text" id="buscaTabela" placeholder="Buscar mês..." onkeyup="filtrarTabela()"></div><table id="tabelaMensal"><thead><tr><th onclick="ordenarTabela(0)">Mês</th><th>Pedidos</th><th>Itens</th><th>Bruto</th><th>ICMS</th><th>PIS</th><th>COFINS</th><th>Impostos</th><th>Líquido</th><th>Margem</th></tr></thead><tbody>{% for r in dados %}<tr><td>{{ r.mes }}</td><td>{{ r.qtd_pedidos }}</td><td>{{ r.itens }}</td><td>R$ {{ "%.2f"|format(r.valor_bruto) }}</td><td>R$ {{ "%.2f"|format(r.icms) }}</td><td>R$ {{ "%.2f"|format(r.pis) }}</td><td>R$ {{ "%.2f"|format(r.cofins) }}</td><td>R$ {{ "%.2f"|format(r.impostos) }}</td><td>R$ {{ "%.2f"|format(r.valor_liquido) }}</td><td>{{ "%.2f"|format(r.margem_liquida) }}%</td></tr>{% else %}<tr><td colspan="10" style="text-align:center;padding:30px;">Nenhum registro encontrado.</td></tr>{% endfor %}</tbody></table></section>
 </main></div>
 <script>
+    // Dados do relatório mensal são renderizados pelo backend em forma de arrays JSON.
+    // A tabela mostra os valores agregados e o gráfico compara Bruto, Líquido e Impostos.
     // ==========================================
 // 1. CARREGAMENTO DOS DADOS (Jinja2)
 // ==========================================
@@ -139,7 +141,8 @@ Plotly.newPlot('graficoComparativo', dataPlot, layoutPlot, configPlot);
  * Filtra as linhas da tabela com base no termo digitado na busca.
  */
 function filtrarTabela() {
-  const filtro = document.getElementById('buscaTTabela').value.toLowerCase();
+  // Busca direta na tabela mensal usando o termo digitado pelo usuário.
+  const filtro = document.getElementById('buscaTabela').value.toLowerCase();
   const linhas = document.querySelectorAll('#tabelaMensal tbody tr');
 
   linhas.forEach(linha => {
