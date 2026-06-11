@@ -428,4 +428,43 @@ def listar_anos_pedidos():
         return []
 
 
-
+def excluir_produto(id):
+    conn = conectar_bd()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM inventory WHERE product_id=%s", (id,))
+        cursor.execute("DELETE FROM products WHERE id=%s", (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Erro ao excluir produto: {err}")
+        try:
+            conn.rollback()
+            conn.close()
+        except Exception:
+            pass
+        return False
+    
+def excluir_estoque(id):
+    conn = conectar_bd()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM inventory WHERE id=%s", (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Erro ao excluir estoque: {err}")
+        try:
+            conn.rollback()
+            conn.close()
+        except Exception:
+            pass
+        return False

@@ -33,6 +33,8 @@ from acts import (
     excluir_fornecedor,
     lista_pedidos,
     listar_anos_pedidos,
+    excluir_estoque,
+    excluir_produto,
 )
 from relatorios import (
     get_relatorio_operacional,
@@ -95,7 +97,8 @@ def produtos_actions():
         cadastrar_produto(name, description, price, image_url, image_path, featured)
     elif action == 'edit':
         atualizar_produto(product_id, name, description, price, image_url, image_path, featured)
-
+    elif action == 'delete':
+        excluir_produto(product_id)
     return redirect(url_for('index'))
 
 
@@ -117,6 +120,12 @@ def estoque_salvar():
     supplier_id = request.form.get('supplier_id')
     quantity = request.form.get('quantity')
     salvar_estoque(product_id, category_id, supplier_id, quantity)
+    return redirect(url_for('estoque'))
+
+@app.route('/estoque/excluir', methods=['POST'])
+def excluir_estoque_route():
+    stock_id = request.form.get('id')
+    excluir_estoque(stock_id)
     return redirect(url_for('estoque'))
 
 
