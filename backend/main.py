@@ -193,12 +193,6 @@ def pedidos():
     q = request.args.get('q', '').strip() or None
     return render_template('pedidos.html', pedidos=lista_pedidos(q=q))
 
-from flask import jsonify, abort
-
-from flask import jsonify, abort
-import mysql.connector
-
-from flask import jsonify, abort
 
 @app.route('/pedido/<int:id>/detalhes', methods=['GET'])
 def detalhes_do_pedido(id):
