@@ -519,7 +519,7 @@ def excluir_produto(id):
         return False
     try:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM inventory WHERE product_id=%s", (id,))
+        ##cursor.execute("DELETE FROM inventory WHERE product_id=%s", (id,))
         cursor.execute("DELETE FROM products WHERE id=%s", (id,))
         conn.commit()
         cursor.close()
@@ -534,20 +534,25 @@ def excluir_produto(id):
             pass
         return False
     
-def excluir_estoque(id):
-    """Remove um item do inventário pelo seu ID."""
+def excluir_estoque(inventory_id):
     conn = conectar_bd()
     if not conn:
         return False
     try:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM inventory WHERE id=%s", (id,))
+        # Deleta a linha específica do inventário
+        cursor.execute("DELETE FROM inventory WHERE id = %s", (inventory_id,))
+        cursor.execute("DELETE FROM products WHERE id=%s", (inventory_id,))
         conn.commit()
         cursor.close()
         conn.close()
         return True
     except mysql.connector.Error as err:
-        print(f"Erro ao excluir estoque: {err}")
+        print(f"Erro ao excluir do estoque: {err}")
+        return False
+
+    except mysql.connector.Error as err:
+        print(f"Erro ao excluir do estoque: {err}")
         try:
             conn.rollback()
             conn.close()

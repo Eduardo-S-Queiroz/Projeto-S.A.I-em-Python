@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Produtos - S.A.I</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icon/apple-touch-icon.png') }}">
+
 </head>
 
 <body>
@@ -97,7 +97,7 @@
                                     data-featured="{{ 1 if produto.featured else 0 }}">
                                     <i class="fas fa-edit"></i> Editar
                                 </button>
-                                <form method="POST" action="/produtos" style="display:inline; margin-left: 8px;">
+                                <form method="POST" action="/index.html" style="display:inline; margin-left: 8px;">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="{{ produto.id }}">
                                     <button type="submit" class="btn-acao btn-excluir" onclick="return confirm('Confirma excluir este produto?');">
@@ -121,7 +121,7 @@
         <div class="modal-conteudo">
             <span class="modal-fechar" onclick="fecharModalProduto()">&times;</span>
             <h2 id="modalTitle">Novo Produto</h2>
-            <form action="/produtos" method="POST" enctype="multipart/form-data" id="formProduto">
+            <form action="/index.html" method="POST" enctype="multipart/form-data" id="formProduto">
                 <input type="hidden" name="action" id="formAction" value="add">
                 <input type="hidden" name="id" id="formId">
                 <div class="form-group">

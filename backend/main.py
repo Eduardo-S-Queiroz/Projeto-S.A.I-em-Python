@@ -92,7 +92,7 @@ def index():
     )
 
 
-@app.route('/produtos', methods=['POST'])
+@app.route('/index.html', methods=['POST'])
 def produtos_actions():
     """Processa ações de CRUD de produtos enviadas pelo formulário."""
     action = request.form.get('action')
@@ -138,9 +138,12 @@ def estoque_salvar():
 
 @app.route('/estoque/excluir', methods=['POST'])
 def excluir_estoque_route():
-    """Recebe o pedido de exclusão de um registro de estoque."""
-    stock_id = request.form.get('id')
-    excluir_estoque(stock_id)
+    # 1. Altere de 'id' para 'inventory_id'
+    inventory_id = request.form.get('inventory_id')
+    
+    if inventory_id:
+        excluir_estoque(int(inventory_id))
+        
     return redirect(url_for('estoque'))
 
 

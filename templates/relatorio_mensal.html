@@ -73,7 +73,7 @@
     </aside>
 
     <main class="area-principal">
-<section class="relatorio-card"><form method="GET" class="grid-filtros-mensal"><div class="form-group"><label>Ano</label><select name="ano">{% for a in anos %}<option value="{{ a }}" {% if ano_selecionado == a %}selected{% endif %}>{{ a }}</option>{% endfor %}{% if not anos %}<option value="2026">2026</option>{% endif %}</select></div><div class="form-group meses-chip-area"><label>Meses</label><div class="chips-meses">{% set nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'] %}{% for m in range(1,13) %}<label class="chip-mes"><input type="checkbox" name="mes" value="{{ m }}" {% if m in meses_selecionados %}checked{% endif %}> {{ nomes[m-1] }}</label>{% endfor %}</div></div><div class="acoes-filtro"><button class="btn-adicionar" type="submit"><i class="fas fa-filter"></i> Aplicar</button><a class="btn-link-limpar" href="/relatorio_mensal.html">Limpar</a></div></form></section>
+<section class="relatorio-card"><form method="GET" class="grid-filtros-mensal"><div class="form-group"><label>Ano</label><select name="ano">{% for a in anos %}<option value="{{ a }}" {% if ano_selecionado == a %}selected{% endif %}>{{ a }}</option>{% endfor %}{% if not anos %}<option value="2026">2026</option>{% endif %}</select></div><div class="form-group meses-chip-area"><label>Meses</label><div class="chips-meses">{% set nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'] %}{% for m in range(1,13) %}<label class="chip-mes"><input type="checkbox" class="input-escondido" name="mes" value="{{ m }}" {% if m in meses_selecionados %}checked{% endif %}> {{ nomes[m-1] }}</label>{% endfor %}</div></div><div class="acoes-filtro"><button class="btn-adicionar" type="submit"><i class="fas fa-filter"></i> Aplicar</button><a class="btn-link-limpar" href="/relatorio_mensal.html">Limpar</a></div></form></section>
 <section class="kpi-grid-projeto2"><article class="kpi-card"><span>Total Bruto</span><strong>R$ {{ "%.2f"|format(totais.total_bruto) }}</strong></article><article class="kpi-card"><span>Total Líquido</span><strong>R$ {{ "%.2f"|format(totais.total_liquido) }}</strong></article><article class="kpi-card"><span>Impostos</span><strong>R$ {{ "%.2f"|format(totais.impostos) }}</strong></article><article class="kpi-card"><span>Itens Vendidos</span><strong>{{ totais.itens }}</strong></article></section>
 <section class="relatorio-card"><h3>Comparativo Mensal</h3><div id="graficoComparativo" style="min-height:390px;"></div></section>
 <section class="relatorio-card"><div class="barra-tabela-projeto2"><div>Detalhamento mensal</div><input type="text" id="buscaTabela" placeholder="Buscar mês..." onkeyup="filtrarTabela()"></div><table id="tabelaMensal"><thead><tr><th onclick="ordenarTabela(0)">Mês</th><th>Pedidos</th><th>Itens</th><th>Bruto</th><th>ICMS</th><th>PIS</th><th>COFINS</th><th>Impostos</th><th>Líquido</th><th>Margem</th></tr></thead><tbody>{% for r in dados %}<tr><td>{{ r.mes }}</td><td>{{ r.qtd_pedidos }}</td><td>{{ r.itens }}</td><td>R$ {{ "%.2f"|format(r.valor_bruto) }}</td><td>R$ {{ "%.2f"|format(r.icms) }}</td><td>R$ {{ "%.2f"|format(r.pis) }}</td><td>R$ {{ "%.2f"|format(r.cofins) }}</td><td>R$ {{ "%.2f"|format(r.impostos) }}</td><td>R$ {{ "%.2f"|format(r.valor_liquido) }}</td><td>{{ "%.2f"|format(r.margem_liquida) }}%</td></tr>{% else %}<tr><td colspan="10" style="text-align:center;padding:30px;">Nenhum registro encontrado.</td></tr>{% endfor %}</tbody></table></section>
@@ -84,32 +84,32 @@
     // ==========================================
 // 1. CARREGAMENTO DOS DADOS (Jinja2)
 // ==========================================
-const meses = {{ dados | map(attribute = 'mes') | list | tojson }};
-const bruto = {{ dados | map(attribute = 'valor_bruto') | list | tojson }};
-const liquido = {{ dados | map(attribute = 'valor_liquido') | list | tojson }};
-const impostos = {{ dados | map(attribute = 'impostos') | list | tojson }};
+const relatorioMensalMeses = {{ dados | map(attribute = 'mes') | list | tojson }};
+const relatorioMensalBruto = {{ dados | map(attribute = 'valor_bruto') | list | tojson }};
+const relatorioMensalLiquido = {{ dados | map(attribute = 'valor_liquido') | list | tojson }};
+const relatorioMensalImpostos = {{ dados | map(attribute = 'impostos') | list | tojson }};
 
 // ==========================================
 // 2. CONFIGURAÇÃO E RENDERIZAÇÃO DO GRÁFICO
 // ==========================================
 const dataPlot = [
   {
-    x: meses,
-    y: bruto,
+    x: relatorioMensalMeses,
+    y: relatorioMensalBruto,
     type: 'bar',
     name: 'Bruto',
     marker: { color: '#6b8e6b' }
   },
   {
-    x: meses,
-    y: liquido,
+    x: relatorioMensalMeses,
+    y: relatorioMensalLiquido,
     type: 'bar',
     name: 'Líquido',
     marker: { color: '#a3b18a' }
   },
   {
-    x: meses,
-    y: impostos,
+    x: relatorioMensalMeses,
+    y: relatorioMensalImpostos,
     type: 'scatter',
     mode: 'lines+markers',
     name: 'Impostos',
@@ -201,6 +201,18 @@ function ordenarTabela(indiceColuna) {
         border-radius: 999px;
         padding: 8px 12px;
         font-weight: 600
+    }
+
+   .chip-mes:has(.input-escondido:checked) {
+            background-color: var(--cor-principal, #6b8e6b);
+            color: #ffffff;
+            border-color: var(--cor-principal, #6b8e6b);
+    }
+
+    .input-escondido {
+        opacity: 0;
+        position: absolute;
+        pointer-events: none;
     }
 
     .kpi-grid-projeto2 {
